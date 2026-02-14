@@ -39,6 +39,12 @@ tasks {
         // See https://openjdk.java.net/jeps/247 for more information.
         options.release.set(21)
     }
+
+    processResources {
+        filesMatching("plugin.yml") {
+            expand("version" to project.version)
+        }
+    }
 }
 
 tasks.withType<JavaCompile>() {
