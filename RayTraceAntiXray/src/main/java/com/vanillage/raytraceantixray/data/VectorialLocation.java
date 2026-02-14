@@ -13,45 +13,48 @@ public final class VectorialLocation {
     private final Vector vector;
     private final Vector direction;
 
-    public VectorialLocation(World world, Vector vector, Vector direction) {
+    public VectorialLocation(final World world, final Vector vector, final Vector direction) {
         this.world = new WeakReference<>(world);
         this.vector = vector;
         this.direction = direction;
     }
 
-    public VectorialLocation(VectorialLocation location) {
-        world = location.world;
-        vector = location.getVector().clone();
-        direction = location.getDirection().clone();
+    public VectorialLocation(final VectorialLocation location) {
+        this.world = location.world;
+        this.vector = location.getVector().clone();
+        this.direction = location.getDirection().clone();
     }
 
-    public VectorialLocation(Location location) {
+    public VectorialLocation(final Location location) {
         this(location.getWorld(), location.toVector(), location.getDirection());
     }
 
     public World getWorld() {
-        return world.get();
+        return this.world.get();
     }
 
     public Vector getVector() {
-        return vector;
+        return this.vector;
     }
 
     public Vector getDirection() {
-        return direction;
+        return this.direction;
     }
 
     @Override
-    public boolean equals(Object object) {
-        if (this == object) return true;
-        if (object == null || getClass() != object.getClass()) return false;
-        VectorialLocation that = (VectorialLocation) object;
-        return Objects.equals(vector, that.vector) && Objects.equals(direction, that.direction) && Objects.equals(world, that.world);
+    public boolean equals(final Object object) {
+        if (this == object)
+            return true;
+        if (object == null || this.getClass() != object.getClass())
+            return false;
+        final VectorialLocation that = (VectorialLocation) object;
+        return Objects.equals(this.vector, that.vector) && Objects.equals(this.direction, that.direction)
+                && Objects.equals(this.world, that.world);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(world, vector, direction);
+        return Objects.hash(this.world, this.vector, this.direction);
     }
 
 }

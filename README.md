@@ -1,4 +1,11 @@
 # RayTraceAntiXray
+---
+
+> [!IMPORTANT]  
+> This is **EuSouVoce's fork** of [TauCu's fork](https://github.com/TauCu/RayTraceAntiXray), aimed at improving thread access, even when other plugins are also modifying packets.  
+> I'm modifying certain aspects of the plugin to improve stability for a heavily customized and specific fork of Paper. If you encounter bugs that only appear in this fork, please open an issue here. Otherwise, kindly report them to the current maintainer of the plugin (@TauCu).  
+
+---
 Paper plugin for server-side async multithreaded ray tracing to hide ores that are exposed to air using Paper Anti-Xray engine-mode 1.
 
 Paper Anti-Xray can't hide ores that are exposed to air in caves for example (see picture below). This plugin is an add-on for Paper Anti-Xray to hide those ores too, using ray tracing to calculate whether or not those ores are visible to players. This plugin can also fully hide block entities such as chests since Minecraft 1.20.6.

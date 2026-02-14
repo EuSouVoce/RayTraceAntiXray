@@ -7,21 +7,21 @@ public final class Result {
     private final BlockPos block;
     private final boolean visible;
 
-    public Result(ChunkBlocks chunkBlocks, BlockPos block, boolean visible) {
+    public Result(final ChunkBlocks chunkBlocks, final BlockPos block, final boolean visible) {
         this.chunkBlocks = chunkBlocks;
         this.block = block;
         this.visible = visible;
     }
 
     public ChunkBlocks getChunkBlocks() {
-        return chunkBlocks;
+        return this.chunkBlocks;
     }
 
     public BlockPos getBlock() {
-        return block;
+        return this.block;
     }
 
     public boolean isVisible() {
-        return visible;
+        return this.visible;
     }
 }

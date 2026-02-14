@@ -17,25 +17,29 @@ import java.util.logging.Level;
 public final class PlayerListener implements Listener {
     private final RayTraceAntiXray plugin;
 
-    public PlayerListener(RayTraceAntiXray plugin) {
+    public PlayerListener(final RayTraceAntiXray plugin) {
         this.plugin = plugin;
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
+    public void onPlayerJoin(final PlayerJoinEvent event) {
+        final Player player = event.getPlayer();
 
         try {
-            if (plugin.tryCreatePlayerDataFor(player) == null)
+            if (this.plugin.tryCreatePlayerDataFor(player) == null)
                 return;
 
             if (BukkitUtil.IS_FOLIA) {
-                event.getPlayer().getScheduler().runAtFixedRate(plugin, new UpdateBukkitRunnable(plugin, event.getPlayer()), null, 1L, plugin.getUpdateTicks());
+                event.getPlayer().getScheduler().runAtFixedRate(this.plugin,
+                        new UpdateBukkitRunnable(this.plugin, event.getPlayer()), null, 1L, this.plugin.getUpdateTicks());
             }
-        } catch (Throwable t) {
-            player.kick(Component.text("RayTraceAntiXray encountered an error for your connection, please contact server administrators: " + t.getMessage()));
+        } catch (final Throwable t) {
+            player.kick(Component.text(
+                    "RayTraceAntiXray encountered an error for your connection, please contact server administrators: "
+                            + t.getMessage()));
             if (t instanceof Exception) {
-                plugin.getLogger().log(Level.SEVERE, "Exception raised while creating data for \"" + player + "\" during player join", t);
+                this.plugin.getLogger().log(Level.SEVERE,
+                        "Exception raised while creating data for \"" + player + "\" during player join", t);
             } else {
                 throw t;
             }
@@ -43,11 +47,11 @@ public final class PlayerListener implements Listener {
     }
 
     @EventHandler
-    public void onPlayerQuit(PlayerQuitEvent event) {
-        PlayerData data = plugin.getPlayerData().get(event.getPlayer().getUniqueId());
+    public void onPlayerQuit(final PlayerQuitEvent event) {
+        final PlayerData data = this.plugin.getPlayerData().get(event.getPlayer().getUniqueId());
         if (data != null) {
             data.getPacketHandler().detach();
-            plugin.getPlayerData().remove(event.getPlayer().getUniqueId(), data);
+            this.plugin.getPlayerData().remove(event.getPlayer().getUniqueId(), data);
         }
     }
 

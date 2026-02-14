@@ -12,21 +12,21 @@ public final class ChunkBlocks {
     private final LongWrapper key;
     private final Map<BlockPos, Boolean> blocks;
 
-    public ChunkBlocks(LevelChunk chunk, Map<BlockPos, Boolean> blocks) {
+    public ChunkBlocks(final LevelChunk chunk, final Map<BlockPos, Boolean> blocks) {
         this.chunk = new WeakReference<>(chunk);
-        key = new LongWrapper(chunk.getPos().toLong());
+        this.key = new LongWrapper(chunk.getPos().toLong());
         this.blocks = blocks;
     }
 
     public LevelChunk getChunk() {
-        return chunk.get();
+        return this.chunk.get();
     }
 
     public LongWrapper getKey() {
-        return key;
+        return this.key;
     }
 
     public Map<BlockPos, Boolean> getBlocks() {
-        return blocks;
+        return this.blocks;
     }
 }

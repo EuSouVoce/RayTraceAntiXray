@@ -28,13 +28,14 @@ import java.util.function.BiConsumer;
 /**
  * Simple time splitter utility for use in TimeFormatter.<br>
  * From BukkitUtils
+ * 
  * @author TauCubed
  */
 public class TimeSplitter {
 
-    public static void splitNanos(long nanos, TimeUnit greater, TimeUnit lesser, BiConsumer<TimeUnit, Long> consumer) {
-        int greaterId = toUnitId(greater);
-        int lesserId = toUnitId(lesser);
+    public static void splitNanos(long nanos, final TimeUnit greater, final TimeUnit lesser, final BiConsumer<TimeUnit, Long> consumer) {
+        final int greaterId = TimeSplitter.toUnitId(greater);
+        final int lesserId = TimeSplitter.toUnitId(lesser);
 
         // days
         if (greaterId > 5) {
@@ -96,7 +97,7 @@ public class TimeSplitter {
         }
     }
 
-    private static int toUnitId(TimeUnit src) {
+    private static int toUnitId(final TimeUnit src) {
         return switch (src) {
             case NANOSECONDS -> 0;
             case MICROSECONDS -> 1;

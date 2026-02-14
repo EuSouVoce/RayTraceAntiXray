@@ -30,68 +30,73 @@ public final class UpdateBukkitRunnable extends BukkitRunnable implements Consum
     private final RayTraceAntiXray plugin;
     private final Player player;
 
-    public UpdateBukkitRunnable(RayTraceAntiXray plugin) {
+    public UpdateBukkitRunnable(final RayTraceAntiXray plugin) {
         this(plugin, null);
     }
 
-    public UpdateBukkitRunnable(RayTraceAntiXray plugin, Player player) {
+    public UpdateBukkitRunnable(final RayTraceAntiXray plugin, final Player player) {
         this.plugin = plugin;
         this.player = player;
     }
 
     @Override
     public void run() {
-        if (player == null) {
-            for (Player p : plugin.getServer().getOnlinePlayers()) {
-                update(p);
+        if (this.player == null) {
+            for (final Player p : this.plugin.getServer().getOnlinePlayers()) {
+                this.update(p);
             }
         } else {
-            update(player);
+            this.update(this.player);
         }
     }
 
     @Override
-    public void accept(ScheduledTask t) {
-        run();
+    public void accept(final ScheduledTask t) {
+        this.run();
     }
 
-    public void update(Player player) {
-        PlayerData playerData = plugin.getPlayerData().get(player.getUniqueId());
+    public void update(final Player player) {
+        final PlayerData playerData = this.plugin.getPlayerData().get(player.getUniqueId());
         if (playerData == null)
             return; // NPCs don't get added to the playerdata map.
 
-        World world = playerData.getLocations()[0].getWorld();
+        final World world = playerData.getLocations()[0].getWorld();
 
         if (!player.getWorld().equals(world)) {
             return;
         }
 
-        Location loc = player.getLocation();
-        Vector vec = loc.toVector();
+        final Location loc = player.getLocation();
+        final Vector vec = loc.toVector();
         vec.setY(vec.getY() + player.getEyeHeight());
-        VectorialLocation vecLoc = new VectorialLocation(world, vec, loc.getDirection());
+        final VectorialLocation vecLoc = new VectorialLocation(world, vec, loc.getDirection());
         playerData.setLocations(RayTraceAntiXray.getLocations(player, vecLoc));
 
-        ConcurrentMap<LongWrapper, ChunkBlocks> chunks = playerData.getChunks();
-        ServerLevel serverLevel = ((CraftWorld) world).getHandle();
-        Environment environment = world.getEnvironment();
-        Queue<Result> results = playerData.getResults();
+        final ConcurrentMap<LongWrapper, ChunkBlocks> chunks = playerData.getChunks();
+        final ServerLevel serverLevel = ((CraftWorld) world).getHandle();
+        final Environment environment = world.getEnvironment();
+        final Queue<Result> results = playerData.getResults();
         Result result;
 
         while ((result = results.poll()) != null) {
-            ChunkBlocks chunkBlocks = result.getChunkBlocks();
+            final ChunkBlocks chunkBlocks = result.getChunkBlocks();
 
-            // Check if the client still has the chunk loaded and if it wasn't resent in the meantime.
-            // Note that even if this check passes, the server could have already unloaded or resent the chunk but the corresponding packet is still in the packet queue.
-            // Technically the null check isn't necessary but we don't need to send an update packet because the client will unload the chunk.
+            // Check if the client still has the chunk loaded and if it wasn't resent in the
+            // meantime.
+            // Note that even if this check passes, the server could have already unloaded
+            // or resent the chunk but the corresponding packet is still in the packet
+            // queue.
+            // Technically the null check isn't necessary but we don't need to send an
+            // update packet because the client will unload the chunk.
             if (chunkBlocks.getChunk() == null || chunks.get(chunkBlocks.getKey()) != chunkBlocks) {
                 continue;
             }
 
-            BlockPos block = result.getBlock();
+            final BlockPos block = result.getBlock();
 
             // Similar to the null check above, this check isn't actually necessary.
-            // However, we don't need to send an update packet because the client will unload the chunk.
+            // However, we don't need to send an update packet because the client will
+            // unload the chunk.
             // Thus we can avoid loading the chunk just for the update packet.
             if (!world.isChunkLoaded(block.getX() >> 4, block.getZ() >> 4)) {
                 continue;
@@ -117,29 +122,31 @@ public final class UpdateBukkitRunnable extends BukkitRunnable implements Consum
             }
 
             // We can't send the packet normally (through the packet queue).
-            // We bypass the packet queue since our calculations are based on the packet state (not the server state) as seen by the packet listener.
-            // As described above, the packet queue could for example already contain a chunk unload packet.
+            // We bypass the packet queue since our calculations are based on the packet
+            // state (not the server state) as seen by the packet listener.
+            // As described above, the packet queue could for example already contain a
+            // chunk unload packet.
             // Thus we send our packet immediately before that.
-            sendPacketImmediately(player, new ClientboundBlockUpdatePacket(block, blockState));
+            UpdateBukkitRunnable.sendPacketImmediately(player, new ClientboundBlockUpdatePacket(block, blockState));
 
             if (blockEntity != null) {
-                Packet<ClientGamePacketListener> packet = blockEntity.getUpdatePacket();
+                final Packet<ClientGamePacketListener> packet = blockEntity.getUpdatePacket();
 
                 if (packet != null) {
-                    sendPacketImmediately(player, packet);
+                    UpdateBukkitRunnable.sendPacketImmediately(player, packet);
                 }
             }
         }
     }
 
-    private static boolean sendPacketImmediately(Player player, Object packet) {
-        ServerGamePacketListenerImpl connection = ((CraftPlayer) player).getHandle().connection;
+    private static boolean sendPacketImmediately(final Player player, final Object packet) {
+        final ServerGamePacketListenerImpl connection = ((CraftPlayer) player).getHandle().connection;
 
         if (connection == null || connection.processedDisconnect) {
             return false;
         }
 
-        Channel channel = connection.connection.channel;
+        final Channel channel = connection.connection.channel;
 
         if (channel == null || !channel.isOpen()) {
             return false;

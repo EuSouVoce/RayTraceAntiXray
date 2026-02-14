@@ -15,60 +15,61 @@ public class DuplexHandler extends ChannelDuplexHandler {
 
     private Channel channel;
 
-    public DuplexHandler(String name) {
+    public DuplexHandler(final String name) {
         this.name = Objects.requireNonNull(name);
     }
 
     public String getAttachedName() {
-        return name;
+        return this.name;
     }
 
     public Channel getAttachedChannel() {
-        if (channel != null && channel.pipeline().get(name) != this)
-            channel = null;
-        return channel;
+        if (this.channel != null && this.channel.pipeline().get(this.name) != this)
+            this.channel = null;
+        return this.channel;
     }
 
-    public void attach(Player player) throws RuntimeException {
-        attach(player.getAddress().getAddress());
+    public void attach(final Player player) throws RuntimeException {
+        this.attach(player.getAddress().getAddress());
     }
 
-    public void attach(InetAddress address) throws RuntimeException {
-        attach(NetworkUtil.getChannelOrThrow(NetworkUtil.getServerConnectionOrThrow(address)));
+    public void attach(final InetAddress address) throws RuntimeException {
+        this.attach(NetworkUtil.getChannelOrThrow(NetworkUtil.getServerConnectionOrThrow(address)));
     }
 
-    public void attach(Channel channel) {
-        detach();
-        ChannelPipeline pipe = channel.pipeline();
+    public void attach(final Channel channel) {
+        this.detach();
+        final ChannelPipeline pipe = channel.pipeline();
         if (pipe.get("packet_handler") == null) {
-            pipe.addLast(name, this);
+            pipe.addLast(this.name, this);
         } else {
-            pipe.addBefore("packet_handler", name, this);
+            pipe.addBefore("packet_handler", this.name, this);
         }
         this.channel = channel;
     }
 
     public void detach() throws RuntimeException {
-        if (channel != null) {
-            detach(channel, name);
-            channel = null;
+        if (this.channel != null) {
+            DuplexHandler.detach(this.channel, this.name);
+            this.channel = null;
         }
     }
 
-    public static void detach(Player player, String name) throws RuntimeException {
-        detach(player.getAddress().getAddress(), name);
+    public static void detach(final Player player, final String name) throws RuntimeException {
+        DuplexHandler.detach(player.getAddress().getAddress(), name);
     }
 
-    public static void detach(InetAddress address, String name) throws RuntimeException {
-        detach(NetworkUtil.getChannelOrThrow(NetworkUtil.getServerConnectionOrThrow(address)), name);
+    public static void detach(final InetAddress address, final String name) throws RuntimeException {
+        DuplexHandler.detach(NetworkUtil.getChannelOrThrow(NetworkUtil.getServerConnectionOrThrow(address)), name);
     }
 
-    public static void detach(Channel channel, String name) {
+    public static void detach(final Channel channel, final String name) {
         try {
-            if (channel.pipeline().remove(name) instanceof DuplexHandler handler) {
+            if (channel.pipeline().remove(name) instanceof final DuplexHandler handler) {
                 handler.channel = null;
             }
-        } catch (NoSuchElementException ignored) {}
+        } catch (final NoSuchElementException ignored) {
+        }
     }
 
 }

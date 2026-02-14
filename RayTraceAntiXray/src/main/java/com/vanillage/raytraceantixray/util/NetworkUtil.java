@@ -20,13 +20,13 @@ public class NetworkUtil {
     private static Object regionizedServerInstance = null;
 
     // not public in spigot
-    public static Connection getConnection(ServerGamePacketListenerImpl listener) {
+    public static Connection getConnection(final ServerGamePacketListenerImpl listener) {
         try {
-            if (field_serverGamePacketListenerImpl_connection == null) {
+            if (NetworkUtil.field_serverGamePacketListenerImpl_connection == null) {
                 Field f = null;
                 Class<?> clazz = ServerGamePacketListenerImpl.class;
                 do {
-                    for (Field check : clazz.getDeclaredFields()) {
+                    for (final Field check : clazz.getDeclaredFields()) {
                         if (check.getType().isAssignableFrom(Connection.class)) {
                             f = check;
                             break;
@@ -34,10 +34,10 @@ public class NetworkUtil {
                     }
                 } while (f == null && (clazz = clazz.getSuperclass()) != null);
                 f.setAccessible(true);
-                field_serverGamePacketListenerImpl_connection = f;
+                NetworkUtil.field_serverGamePacketListenerImpl_connection = f;
             }
-            return (Connection) field_serverGamePacketListenerImpl_connection.get(listener);
-        } catch (ReflectiveOperationException e) {
+            return (Connection) NetworkUtil.field_serverGamePacketListenerImpl_connection.get(listener);
+        } catch (final ReflectiveOperationException e) {
             throw new RuntimeException("Error while getting network connection", e);
         }
     }
@@ -46,21 +46,21 @@ public class NetworkUtil {
     public static Iterable<Connection> getConnections() {
         if (BukkitUtil.IS_FOLIA) {
             try {
-                if (field_regionizedServer_connections == null || regionizedServerInstance == null) {
-                    ClassLoader scl = Bukkit.getServer().getClass().getClassLoader();
-                    Class<?> regionizedServerClazz = scl.loadClass("io.papermc.paper.threadedregions.RegionizedServer");
-                    Field connectionsField = regionizedServerClazz.getDeclaredField("connections");
+                if (NetworkUtil.field_regionizedServer_connections == null || NetworkUtil.regionizedServerInstance == null) {
+                    final ClassLoader scl = Bukkit.getServer().getClass().getClassLoader();
+                    final Class<?> regionizedServerClazz = scl.loadClass("io.papermc.paper.threadedregions.RegionizedServer");
+                    final Field connectionsField = regionizedServerClazz.getDeclaredField("connections");
                     connectionsField.setAccessible(true);
 
-                    Method getInstanceMethod = regionizedServerClazz.getDeclaredMethod("getInstance");
+                    final Method getInstanceMethod = regionizedServerClazz.getDeclaredMethod("getInstance");
                     getInstanceMethod.setAccessible(true);
-                    Object instance = getInstanceMethod.invoke(null);
+                    final Object instance = getInstanceMethod.invoke(null);
 
-                    field_regionizedServer_connections = connectionsField;
-                    regionizedServerInstance = instance;
+                    NetworkUtil.field_regionizedServer_connections = connectionsField;
+                    NetworkUtil.regionizedServerInstance = instance;
                 }
-                return (Iterable<Connection>) field_regionizedServer_connections.get(regionizedServerInstance);
-            } catch (Exception e) {
+                return (Iterable<Connection>) NetworkUtil.field_regionizedServer_connections.get(NetworkUtil.regionizedServerInstance);
+            } catch (final Exception e) {
                 throw new RuntimeException("Could not resolve regionized server connections field", e);
             }
         } else {
@@ -68,17 +68,18 @@ public class NetworkUtil {
         }
     }
 
-    public static Channel getChannelOrThrow(Connection connection) {
-        return Objects.requireNonNull(connection.channel, "Channel is null for address: " + connection.getRemoteAddress());
+    public static Channel getChannelOrThrow(final Connection connection) {
+        return Objects.requireNonNull(connection.channel,
+                "Channel is null for address: " + connection.getRemoteAddress());
     }
 
-    public static Connection getServerConnectionOrThrow(InetAddress address) {
-        return Objects.requireNonNull(getServerConnection(address), "Connection not found for address: " + address);
+    public static Connection getServerConnectionOrThrow(final InetAddress address) {
+        return Objects.requireNonNull(NetworkUtil.getServerConnection(address), "Connection not found for address: " + address);
     }
 
-    public static Connection getServerConnection(InetAddress address) {
-        for (Connection c : getConnections()) {
-            if (c.getRemoteAddress() instanceof InetSocketAddress addr && addr.getAddress() == address) {
+    public static Connection getServerConnection(final InetAddress address) {
+        for (final Connection c : NetworkUtil.getConnections()) {
+            if (c.getRemoteAddress() instanceof final InetSocketAddress addr && addr.getAddress() == address) {
                 return c;
             }
         }

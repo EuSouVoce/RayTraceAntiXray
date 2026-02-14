@@ -18,64 +18,75 @@ public final class BlockIterator implements Iterator<int[]> {
     private double tDeltaX;
     private double tDeltaY;
     private double tDeltaZ;
-    private int[] ref = new int[3]; // This implementation always returns ref or refSwap to avoid garbage. Can easily be changed if needed.
+    private int[] ref = new int[3]; // This implementation always returns ref or refSwap to avoid garbage. Can
+                                    // easily be changed if needed.
     private int[] refSwap = new int[3];
     private int[] next;
 
-    public BlockIterator(double startX, double startY, double startZ, double endX, double endY, double endZ) {
-        initialize(startX, startY, startZ, endX, endY, endZ);
+    public BlockIterator(final double startX, final double startY, final double startZ, final double endX, final double endY, final double endZ) {
+        this.initialize(startX, startY, startZ, endX, endY, endZ);
     }
 
-    public BlockIterator(int x, int y, int z, double startX, double startY, double startZ, double endX, double endY, double endZ) {
-        initialize(x, y, z, startX, startY, startZ, endX, endY, endZ);
+    public BlockIterator(final int x, final int y, final int z, final double startX, final double startY, final double startZ, final double endX, final double endY,
+            final double endZ) {
+        this.initialize(x, y, z, startX, startY, startZ, endX, endY, endZ);
     }
 
-    public BlockIterator(double startX, double startY, double startZ, double directionX, double directionY, double directionZ, double distance) {
-        initialize(startX, startY, startZ, directionX, directionY, directionZ, distance);
+    public BlockIterator(final double startX, final double startY, final double startZ, final double directionX, final double directionY,
+            final double directionZ, final double distance) {
+        this.initialize(startX, startY, startZ, directionX, directionY, directionZ, distance);
     }
 
-    public BlockIterator(int x, int y, int z, double startX, double startY, double startZ, double directionX, double directionY, double directionZ, double distance) {
-        initialize(x, y, z, startX, startY, startZ, directionX, directionY, directionZ, distance);
+    public BlockIterator(final int x, final int y, final int z, final double startX, final double startY, final double startZ, final double directionX,
+            final double directionY, final double directionZ, final double distance) {
+        this.initialize(x, y, z, startX, startY, startZ, directionX, directionY, directionZ, distance);
     }
 
-    public BlockIterator(double startX, double startY, double startZ, double directionX, double directionY, double directionZ, double distance, boolean normalized) {
+    public BlockIterator(final double startX, final double startY, final double startZ, final double directionX, final double directionY,
+            final double directionZ, final double distance, final boolean normalized) {
         if (normalized) {
-            initializeNormalized(startX, startY, startZ, directionX, directionY, directionZ, distance);
+            this.initializeNormalized(startX, startY, startZ, directionX, directionY, directionZ, distance);
         } else {
-            initialize(startX, startY, startZ, directionX, directionY, directionZ, distance);
+            this.initialize(startX, startY, startZ, directionX, directionY, directionZ, distance);
         }
     }
 
-    public BlockIterator(int x, int y, int z, double startX, double startY, double startZ, double directionX, double directionY, double directionZ, double distance, boolean normalized) {
+    public BlockIterator(final int x, final int y, final int z, final double startX, final double startY, final double startZ, final double directionX,
+            final double directionY, final double directionZ, final double distance, final boolean normalized) {
         if (normalized) {
-            initializeNormalized(x, y, z, startX, startY, startZ, directionX, directionY, directionZ, distance);
+            this.initializeNormalized(x, y, z, startX, startY, startZ, directionX, directionY, directionZ, distance);
         } else {
-            initialize(x, y, z, startX, startY, startZ, directionX, directionY, directionZ, distance);
+            this.initialize(x, y, z, startX, startY, startZ, directionX, directionY, directionZ, distance);
         }
     }
 
-    public BlockIterator initialize(double startX, double startY, double startZ, double endX, double endY, double endZ) {
-        return initialize(floor(startX), floor(startY), floor(startZ), startX, startY, startZ, endX, endY, endZ);
+    public BlockIterator initialize(final double startX, final double startY, final double startZ, final double endX, final double endY,
+            final double endZ) {
+        return this.initialize(BlockIterator.floor(startX), BlockIterator.floor(startY), BlockIterator.floor(startZ), startX, startY, startZ, endX, endY, endZ);
     }
 
-    public BlockIterator initialize(int x, int y, int z, double startX, double startY, double startZ, double endX, double endY, double endZ) {
+    public BlockIterator initialize(final int x, final int y, final int z, final double startX, final double startY, final double startZ, final double endX,
+            final double endY, final double endZ) {
         double directionX = endX - startX;
         double directionY = endY - startY;
         double directionZ = endZ - startZ;
-        double distance = Math.sqrt(directionX * directionX + directionY * directionY + directionZ * directionZ);
-        double fixedDistance = distance == 0. ? Double.NaN : distance;
+        final double distance = Math.sqrt(directionX * directionX + directionY * directionY + directionZ * directionZ);
+        final double fixedDistance = distance == 0. ? Double.NaN : distance;
         directionX /= fixedDistance;
         directionY /= fixedDistance;
         directionZ /= fixedDistance;
-        return initializeNormalized(x, y, z, startX, startY, startZ, directionX, directionY, directionZ, distance);
+        return this.initializeNormalized(x, y, z, startX, startY, startZ, directionX, directionY, directionZ, distance);
     }
 
-    public BlockIterator initialize(double startX, double startY, double startZ, double directionX, double directionY, double directionZ, double distance) {
-        return initialize(floor(startX), floor(startY), floor(startZ), startX, startY, startZ, directionX, directionY, directionZ, distance);
+    public BlockIterator initialize(final double startX, final double startY, final double startZ, final double directionX, final double directionY,
+            final double directionZ, final double distance) {
+        return this.initialize(BlockIterator.floor(startX), BlockIterator.floor(startY), BlockIterator.floor(startZ), startX, startY, startZ, directionX, directionY,
+                directionZ, distance);
     }
 
-    public BlockIterator initialize(int x, int y, int z, double startX, double startY, double startZ, double directionX, double directionY, double directionZ, double distance) {
-        double signum = Math.signum(distance);
+    public BlockIterator initialize(final int x, final int y, final int z, final double startX, final double startY, final double startZ, double directionX,
+            double directionY, double directionZ, final double distance) {
+        final double signum = Math.signum(distance);
         directionX *= signum;
         directionY *= signum;
         directionZ *= signum;
@@ -88,129 +99,133 @@ public final class BlockIterator implements Iterator<int[]> {
         directionX /= length;
         directionY /= length;
         directionZ /= length;
-        return initializeNormalized(x, y, z, startX, startY, startZ, directionX, directionY, directionZ, Math.abs(distance));
+        return this.initializeNormalized(x, y, z, startX, startY, startZ, directionX, directionY, directionZ,
+                Math.abs(distance));
     }
 
-    public BlockIterator initializeNormalized(double startX, double startY, double startZ, double directionX, double directionY, double directionZ, double distance) {
-        return initializeNormalized(floor(startX), floor(startY), floor(startZ), startX, startY, startZ, directionX, directionY, directionZ, Math.abs(distance));
+    public BlockIterator initializeNormalized(final double startX, final double startY, final double startZ, final double directionX,
+            final double directionY, final double directionZ, final double distance) {
+        return this.initializeNormalized(BlockIterator.floor(startX), BlockIterator.floor(startY), BlockIterator.floor(startZ), startX, startY, startZ, directionX,
+                directionY, directionZ, Math.abs(distance));
     }
 
-    public BlockIterator initializeNormalized(int x, int y, int z, double startX, double startY, double startZ, double directionX, double directionY, double directionZ, double distance) {
+    public BlockIterator initializeNormalized(final int x, final int y, final int z, final double startX, final double startY, final double startZ,
+            final double directionX, final double directionY, final double directionZ, final double distance) {
         this.x = x;
         this.y = y;
         this.z = z;
-        tMax = distance;
-        stepX = directionX < 0. ? -1 : 1;
-        stepY = directionY < 0. ? -1 : 1;
-        stepZ = directionZ < 0. ? -1 : 1;
-        tMaxX = directionX == 0. ? Double.POSITIVE_INFINITY : (x + (stepX + 1) / 2 - startX) / directionX;
-        tMaxY = directionY == 0. ? Double.POSITIVE_INFINITY : (y + (stepY + 1) / 2 - startY) / directionY;
-        tMaxZ = directionZ == 0. ? Double.POSITIVE_INFINITY : (z + (stepZ + 1) / 2 - startZ) / directionZ;
-        tDeltaX = 1. / Math.abs(directionX);
-        tDeltaY = 1. / Math.abs(directionY);
-        tDeltaZ = 1. / Math.abs(directionZ);
-        next = ref;
-        ref[0] = x;
-        ref[1] = y;
-        ref[2] = z;
+        this.tMax = distance;
+        this.stepX = directionX < 0. ? -1 : 1;
+        this.stepY = directionY < 0. ? -1 : 1;
+        this.stepZ = directionZ < 0. ? -1 : 1;
+        this.tMaxX = directionX == 0. ? Double.POSITIVE_INFINITY : (x + (this.stepX + 1) / 2 - startX) / directionX;
+        this.tMaxY = directionY == 0. ? Double.POSITIVE_INFINITY : (y + (this.stepY + 1) / 2 - startY) / directionY;
+        this.tMaxZ = directionZ == 0. ? Double.POSITIVE_INFINITY : (z + (this.stepZ + 1) / 2 - startZ) / directionZ;
+        this.tDeltaX = 1. / Math.abs(directionX);
+        this.tDeltaY = 1. / Math.abs(directionY);
+        this.tDeltaZ = 1. / Math.abs(directionZ);
+        this.next = this.ref;
+        this.ref[0] = x;
+        this.ref[1] = y;
+        this.ref[2] = z;
         return this;
     }
 
     public int[] calculateNext() {
-        if (tMaxX < tMaxY) {
-            if (tMaxZ < tMaxX) {
-                if (tMaxZ <= tMax) {
-                    z += stepZ;
+        if (this.tMaxX < this.tMaxY) {
+            if (this.tMaxZ < this.tMaxX) {
+                if (this.tMaxZ <= this.tMax) {
+                    this.z += this.stepZ;
                     // next = new int[] { x, y, z };
-                    ref[0] = x;
-                    ref[1] = y;
-                    ref[2] = z;
-                    tMaxZ += tDeltaZ;
+                    this.ref[0] = this.x;
+                    this.ref[1] = this.y;
+                    this.ref[2] = this.z;
+                    this.tMaxZ += this.tDeltaZ;
                 } else {
-                    next = null;
+                    this.next = null;
                 }
             } else {
-                if (tMaxX <= tMax) {
-                    if (tMaxZ == tMaxX) {
-                        z += stepZ;
-                        tMaxZ += tDeltaZ;
+                if (this.tMaxX <= this.tMax) {
+                    if (this.tMaxZ == this.tMaxX) {
+                        this.z += this.stepZ;
+                        this.tMaxZ += this.tDeltaZ;
                     }
 
-                    x += stepX;
+                    this.x += this.stepX;
                     // next = new int[] { x, y, z };
-                    ref[0] = x;
-                    ref[1] = y;
-                    ref[2] = z;
-                    tMaxX += tDeltaX;
+                    this.ref[0] = this.x;
+                    this.ref[1] = this.y;
+                    this.ref[2] = this.z;
+                    this.tMaxX += this.tDeltaX;
                 } else {
-                    next = null;
+                    this.next = null;
                 }
             }
-        } else if (tMaxY < tMaxZ) {
-            if (tMaxY <= tMax) {
-                if (tMaxX == tMaxY) {
-                    x += stepX;
-                    tMaxX += tDeltaX;
+        } else if (this.tMaxY < this.tMaxZ) {
+            if (this.tMaxY <= this.tMax) {
+                if (this.tMaxX == this.tMaxY) {
+                    this.x += this.stepX;
+                    this.tMaxX += this.tDeltaX;
                 }
 
-                y += stepY;
+                this.y += this.stepY;
                 // next = new int[] { x, y, z };
-                ref[0] = x;
-                ref[1] = y;
-                ref[2] = z;
-                tMaxY += tDeltaY;
+                this.ref[0] = this.x;
+                this.ref[1] = this.y;
+                this.ref[2] = this.z;
+                this.tMaxY += this.tDeltaY;
             } else {
-                next = null;
+                this.next = null;
             }
         } else {
-            if (tMaxZ <= tMax) {
-                if (tMaxX == tMaxZ) {
-                    x += stepX;
-                    tMaxX += tDeltaX;
+            if (this.tMaxZ <= this.tMax) {
+                if (this.tMaxX == this.tMaxZ) {
+                    this.x += this.stepX;
+                    this.tMaxX += this.tDeltaX;
                 }
 
-                if (tMaxY == tMaxZ) {
-                    y += stepY;
-                    tMaxY += tDeltaY;
+                if (this.tMaxY == this.tMaxZ) {
+                    this.y += this.stepY;
+                    this.tMaxY += this.tDeltaY;
                 }
 
-                z += stepZ;
+                this.z += this.stepZ;
                 // next = new int[] { x, y, z };
-                ref[0] = x;
-                ref[1] = y;
-                ref[2] = z;
-                tMaxZ += tDeltaZ;
+                this.ref[0] = this.x;
+                this.ref[1] = this.y;
+                this.ref[2] = this.z;
+                this.tMaxZ += this.tDeltaZ;
             } else {
-                next = null;
+                this.next = null;
             }
         }
 
-        return next;
+        return this.next;
     }
 
     @Override
     public boolean hasNext() {
-        return next != null;
+        return this.next != null;
     }
 
     @Override
     public int[] next() {
-        int[] next = this.next;
+        final int[] next = this.next;
 
         if (next == null) {
             throw new NoSuchElementException();
         }
 
-        int[] temp = ref;
-        ref = refSwap;
-        refSwap = temp;
-        this.next = ref;
-        calculateNext();
+        final int[] temp = this.ref;
+        this.ref = this.refSwap;
+        this.refSwap = temp;
+        this.next = this.ref;
+        this.calculateNext();
         return next;
     }
 
-    private static int floor(double value) {
-        int i = (int) value;
+    private static int floor(final double value) {
+        final int i = (int) value;
         return value < (double) i ? i - 1 : i;
     }
 }

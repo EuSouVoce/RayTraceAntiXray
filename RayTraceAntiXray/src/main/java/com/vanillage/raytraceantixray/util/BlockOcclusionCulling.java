@@ -9,54 +9,76 @@ public final class BlockOcclusionCulling {
     private static final IntArrayConsumer DECREASE_Y = c -> c[1]--;
     private static final IntArrayConsumer INCREASE_Z = c -> c[2]++;
     private static final IntArrayConsumer DECREASE_Z = c -> c[2]--;
-    private static final IntArrayConsumer[] NEARBY_BLOCKS_X_PLANE_Y_POS_Z_POS = new IntArrayConsumer[] { INCREASE_Y, INCREASE_Z, DECREASE_Y };
-    private static final IntArrayConsumer[] NEARBY_BLOCKS_X_PLANE_Y_POS_Z_NEG = new IntArrayConsumer[] { INCREASE_Y, DECREASE_Z, DECREASE_Y };
-    private static final IntArrayConsumer[] NEARBY_BLOCKS_X_PLANE_Y_NEG_Z_POS = new IntArrayConsumer[] { DECREASE_Y, INCREASE_Z, INCREASE_Y };
-    private static final IntArrayConsumer[] NEARBY_BLOCKS_X_PLANE_Y_NEG_Z_NEG = new IntArrayConsumer[] { DECREASE_Y, DECREASE_Z, INCREASE_Y };
-    private static final IntArrayConsumer[] NEARBY_BLOCKS_Y_PLANE_Z_POS_X_POS = new IntArrayConsumer[] { INCREASE_Z, INCREASE_X, DECREASE_Z };
-    private static final IntArrayConsumer[] NEARBY_BLOCKS_Y_PLANE_Z_POS_X_NEG = new IntArrayConsumer[] { INCREASE_Z, DECREASE_X, DECREASE_Z };
-    private static final IntArrayConsumer[] NEARBY_BLOCKS_Y_PLANE_Z_NEG_X_POS = new IntArrayConsumer[] { DECREASE_Z, INCREASE_X, INCREASE_Z };
-    private static final IntArrayConsumer[] NEARBY_BLOCKS_Y_PLANE_Z_NEG_X_NEG = new IntArrayConsumer[] { DECREASE_Z, DECREASE_X, INCREASE_Z };
-    private static final IntArrayConsumer[] NEARBY_BLOCKS_Z_PLANE_X_POS_Y_POS = new IntArrayConsumer[] { INCREASE_Y, INCREASE_X, DECREASE_Y /* INCREASE_X, INCREASE_Y, DECREASE_X */ };
-    private static final IntArrayConsumer[] NEARBY_BLOCKS_Z_PLANE_X_POS_Y_NEG = new IntArrayConsumer[] { DECREASE_Y, INCREASE_X, INCREASE_Y /* INCREASE_X, DECREASE_Y, DECREASE_X */ };
-    private static final IntArrayConsumer[] NEARBY_BLOCKS_Z_PLANE_X_NEG_Y_POS = new IntArrayConsumer[] { INCREASE_Y, DECREASE_X, DECREASE_Y /* DECREASE_X, INCREASE_Y, INCREASE_X */ };
-    private static final IntArrayConsumer[] NEARBY_BLOCKS_Z_PLANE_X_NEG_Y_NEG = new IntArrayConsumer[] { DECREASE_Y, DECREASE_X, INCREASE_Y /* DECREASE_X, DECREASE_Y, INCREASE_X */ };
+    private static final IntArrayConsumer[] NEARBY_BLOCKS_X_PLANE_Y_POS_Z_POS = new IntArrayConsumer[] { BlockOcclusionCulling.INCREASE_Y,
+            BlockOcclusionCulling.INCREASE_Z, BlockOcclusionCulling.DECREASE_Y };
+    private static final IntArrayConsumer[] NEARBY_BLOCKS_X_PLANE_Y_POS_Z_NEG = new IntArrayConsumer[] { BlockOcclusionCulling.INCREASE_Y,
+            BlockOcclusionCulling.DECREASE_Z, BlockOcclusionCulling.DECREASE_Y };
+    private static final IntArrayConsumer[] NEARBY_BLOCKS_X_PLANE_Y_NEG_Z_POS = new IntArrayConsumer[] { BlockOcclusionCulling.DECREASE_Y,
+            BlockOcclusionCulling.INCREASE_Z, BlockOcclusionCulling.INCREASE_Y };
+    private static final IntArrayConsumer[] NEARBY_BLOCKS_X_PLANE_Y_NEG_Z_NEG = new IntArrayConsumer[] { BlockOcclusionCulling.DECREASE_Y,
+            BlockOcclusionCulling.DECREASE_Z, BlockOcclusionCulling.INCREASE_Y };
+    private static final IntArrayConsumer[] NEARBY_BLOCKS_Y_PLANE_Z_POS_X_POS = new IntArrayConsumer[] { BlockOcclusionCulling.INCREASE_Z,
+            BlockOcclusionCulling.INCREASE_X, BlockOcclusionCulling.DECREASE_Z };
+    private static final IntArrayConsumer[] NEARBY_BLOCKS_Y_PLANE_Z_POS_X_NEG = new IntArrayConsumer[] { BlockOcclusionCulling.INCREASE_Z,
+            BlockOcclusionCulling.DECREASE_X, BlockOcclusionCulling.DECREASE_Z };
+    private static final IntArrayConsumer[] NEARBY_BLOCKS_Y_PLANE_Z_NEG_X_POS = new IntArrayConsumer[] { BlockOcclusionCulling.DECREASE_Z,
+            BlockOcclusionCulling.INCREASE_X, BlockOcclusionCulling.INCREASE_Z };
+    private static final IntArrayConsumer[] NEARBY_BLOCKS_Y_PLANE_Z_NEG_X_NEG = new IntArrayConsumer[] { BlockOcclusionCulling.DECREASE_Z,
+            BlockOcclusionCulling.DECREASE_X, BlockOcclusionCulling.INCREASE_Z };
+    private static final IntArrayConsumer[] NEARBY_BLOCKS_Z_PLANE_X_POS_Y_POS = new IntArrayConsumer[] { BlockOcclusionCulling.INCREASE_Y,
+            BlockOcclusionCulling.INCREASE_X, BlockOcclusionCulling.DECREASE_Y /* INCREASE_X, INCREASE_Y, DECREASE_X */ };
+    private static final IntArrayConsumer[] NEARBY_BLOCKS_Z_PLANE_X_POS_Y_NEG = new IntArrayConsumer[] { BlockOcclusionCulling.DECREASE_Y,
+            BlockOcclusionCulling.INCREASE_X, BlockOcclusionCulling.INCREASE_Y /* INCREASE_X, DECREASE_Y, DECREASE_X */ };
+    private static final IntArrayConsumer[] NEARBY_BLOCKS_Z_PLANE_X_NEG_Y_POS = new IntArrayConsumer[] { BlockOcclusionCulling.INCREASE_Y,
+            BlockOcclusionCulling.DECREASE_X, BlockOcclusionCulling.DECREASE_Y /* DECREASE_X, INCREASE_Y, INCREASE_X */ };
+    private static final IntArrayConsumer[] NEARBY_BLOCKS_Z_PLANE_X_NEG_Y_NEG = new IntArrayConsumer[] { BlockOcclusionCulling.DECREASE_Y,
+            BlockOcclusionCulling.DECREASE_X, BlockOcclusionCulling.INCREASE_Y /* DECREASE_X, DECREASE_Y, INCREASE_X */ };
     private final BlockIteratorFactory blockIteratorFactory;
     private final BlockOcclusionGetter blockOcclusionGetter;
     private final boolean frustumCullingEnabled;
 
-    public BlockOcclusionCulling(BlockIteratorFactory blockIteratorFactory, BlockOcclusionGetter blockOcclusionGetter, boolean frustumCullingEnabled) {
+    public BlockOcclusionCulling(final BlockIteratorFactory blockIteratorFactory, final BlockOcclusionGetter blockOcclusionGetter,
+            final boolean frustumCullingEnabled) {
         this.blockIteratorFactory = blockIteratorFactory;
         this.blockOcclusionGetter = blockOcclusionGetter;
         this.frustumCullingEnabled = frustumCullingEnabled;
     }
 
-    public boolean isVisible(int x, int y, int z, double vectorX, double vectorY, double vectorZ, double directionX, double directionY, double directionZ) {
-        double centerX = x + 0.5;
-        double centerY = y + 0.5;
-        double centerZ = z + 0.5;
-        double differenceX = vectorX - centerX;
-        double differenceY = vectorY - centerY;
-        double differenceZ = vectorZ - centerZ;
-        return isVisible(x, y, z, centerX, centerY, centerZ, differenceX, differenceY, differenceZ, differenceX * differenceX + differenceY * differenceY + differenceZ * differenceZ, directionX, directionY, directionZ);
+    public boolean isVisible(final int x, final int y, final int z, final double vectorX, final double vectorY, final double vectorZ, final double directionX,
+            final double directionY, final double directionZ) {
+        final double centerX = x + 0.5;
+        final double centerY = y + 0.5;
+        final double centerZ = z + 0.5;
+        final double differenceX = vectorX - centerX;
+        final double differenceY = vectorY - centerY;
+        final double differenceZ = vectorZ - centerZ;
+        return this.isVisible(x, y, z, centerX, centerY, centerZ, differenceX, differenceY, differenceZ,
+                differenceX * differenceX + differenceY * differenceY + differenceZ * differenceZ, directionX,
+                directionY, directionZ);
     }
 
-    public boolean isVisible(int x, int y, int z, double centerX, double centerY, double centerZ, double differenceX, double differenceY, double differenceZ, double distanceSquared, double directionX, double directionY, double directionZ) {
-        if (frustumCullingEnabled && (differenceX - directionX) * directionX + (differenceY - directionY) * directionY + (differenceZ - directionZ) * directionZ > 0.) { // Should actually be (difference - Math.sqrt(3.) * direction / 2.) * direction.
+    public boolean isVisible(final int x, final int y, final int z, final double centerX, final double centerY, final double centerZ, final double differenceX,
+            final double differenceY, final double differenceZ, final double distanceSquared, final double directionX, final double directionY,
+            final double directionZ) {
+        if (this.frustumCullingEnabled && (differenceX - directionX) * directionX + (differenceY - directionY) * directionY
+                + (differenceZ - directionZ) * directionZ > 0.) { // Should actually be (difference - Math.sqrt(3.) *
+                                                                  // direction / 2.) * direction.
             return false;
         }
 
-        double distance = Math.sqrt(distanceSquared);
-        double fixedDistance = distance == 0. ? Double.NaN : distance;
-        BlockIterator blockIterator = blockIteratorFactory.getBlockIterator(x, y, z, centerX, centerY, centerZ, differenceX / fixedDistance, differenceY / fixedDistance, differenceZ / fixedDistance, distance);
+        final double distance = Math.sqrt(distanceSquared);
+        final double fixedDistance = distance == 0. ? Double.NaN : distance;
+        final BlockIterator blockIterator = this.blockIteratorFactory.getBlockIterator(x, y, z, centerX, centerY, centerZ,
+                differenceX / fixedDistance, differenceY / fixedDistance, differenceZ / fixedDistance, distance);
         int[] ray;
 
         while ((ray = blockIterator.calculateNext()) != null) {
-            int rayX = ray[0];
-            int rayY = ray[1];
-            int rayZ = ray[2];
+            final int rayX = ray[0];
+            final int rayY = ray[1];
+            final int rayZ = ray[2];
 
-            if (blockOcclusionGetter.isOccludingRay(rayX, rayY, rayZ) && checkNearbyBlocks(x, y, z, ray, rayX, rayY, rayZ, differenceX, differenceY, differenceZ)) {
+            if (this.blockOcclusionGetter.isOccludingRay(rayX, rayY, rayZ)
+                    && this.checkNearbyBlocks(x, y, z, ray, rayX, rayY, rayZ, differenceX, differenceY, differenceZ)) {
                 return false;
             }
         }
@@ -64,129 +86,130 @@ public final class BlockOcclusionCulling {
         return true;
     }
 
-    private boolean checkNearbyBlocks(int x, int y, int z, int[] ray, int rayX, int rayY, int rayZ, double differenceX, double differenceY, double differenceZ) {
+    private boolean checkNearbyBlocks(final int x, final int y, final int z, final int[] ray, int rayX, int rayY, int rayZ, final double differenceX,
+            final double differenceY, final double differenceZ) {
         IntArrayConsumer[] nearbyBlocks;
         IntArrayConsumer increase;
         IntArrayConsumer decrease;
-        double absDifferenceX = Math.abs(differenceX);
-        double absDifferenceY = Math.abs(differenceY);
-        double absDifferenceZ = Math.abs(differenceZ);
+        final double absDifferenceX = Math.abs(differenceX);
+        final double absDifferenceY = Math.abs(differenceY);
+        final double absDifferenceZ = Math.abs(differenceZ);
         double rayDifferenceX = rayX - x;
         double rayDifferenceY = rayY - y;
         double rayDifferenceZ = rayZ - z;
 
         if (absDifferenceX > absDifferenceY) {
             if (absDifferenceZ > absDifferenceX) {
-                double factor = divide(differenceZ, rayDifferenceZ);
-                rayDifferenceX = multiply(factor, rayDifferenceX) - differenceX;
-                rayDifferenceY = multiply(factor, rayDifferenceY) - differenceY;
+                final double factor = BlockOcclusionCulling.divide(differenceZ, rayDifferenceZ);
+                rayDifferenceX = BlockOcclusionCulling.multiply(factor, rayDifferenceX) - differenceX;
+                rayDifferenceY = BlockOcclusionCulling.multiply(factor, rayDifferenceY) - differenceY;
 
                 if (rayDifferenceX > 0.) {
                     if (rayDifferenceY > 0.) {
-                        nearbyBlocks = NEARBY_BLOCKS_Z_PLANE_X_NEG_Y_NEG;
+                        nearbyBlocks = BlockOcclusionCulling.NEARBY_BLOCKS_Z_PLANE_X_NEG_Y_NEG;
                     } else {
-                        nearbyBlocks = NEARBY_BLOCKS_Z_PLANE_X_NEG_Y_POS;
+                        nearbyBlocks = BlockOcclusionCulling.NEARBY_BLOCKS_Z_PLANE_X_NEG_Y_POS;
                     }
                 } else {
                     if (rayDifferenceY > 0.) {
-                        nearbyBlocks = NEARBY_BLOCKS_Z_PLANE_X_POS_Y_NEG;
+                        nearbyBlocks = BlockOcclusionCulling.NEARBY_BLOCKS_Z_PLANE_X_POS_Y_NEG;
                     } else {
-                        nearbyBlocks = NEARBY_BLOCKS_Z_PLANE_X_POS_Y_POS;
+                        nearbyBlocks = BlockOcclusionCulling.NEARBY_BLOCKS_Z_PLANE_X_POS_Y_POS;
                     }
                 }
 
                 if (differenceZ > 0.) {
-                    increase = DECREASE_Z;
-                    decrease = INCREASE_Z;
+                    increase = BlockOcclusionCulling.DECREASE_Z;
+                    decrease = BlockOcclusionCulling.INCREASE_Z;
                 } else {
-                    increase = INCREASE_Z;
-                    decrease = DECREASE_Z;
+                    increase = BlockOcclusionCulling.INCREASE_Z;
+                    decrease = BlockOcclusionCulling.DECREASE_Z;
                 }
             } else {
-                double factor = divide(differenceX, rayDifferenceX);
-                rayDifferenceY = multiply(factor, rayDifferenceY) - differenceY;
-                rayDifferenceZ = multiply(factor, rayDifferenceZ) - differenceZ;
+                final double factor = BlockOcclusionCulling.divide(differenceX, rayDifferenceX);
+                rayDifferenceY = BlockOcclusionCulling.multiply(factor, rayDifferenceY) - differenceY;
+                rayDifferenceZ = BlockOcclusionCulling.multiply(factor, rayDifferenceZ) - differenceZ;
 
                 if (rayDifferenceY > 0.) {
                     if (rayDifferenceZ > 0.) {
-                        nearbyBlocks = NEARBY_BLOCKS_X_PLANE_Y_NEG_Z_NEG;
+                        nearbyBlocks = BlockOcclusionCulling.NEARBY_BLOCKS_X_PLANE_Y_NEG_Z_NEG;
                     } else {
-                        nearbyBlocks = NEARBY_BLOCKS_X_PLANE_Y_NEG_Z_POS;
+                        nearbyBlocks = BlockOcclusionCulling.NEARBY_BLOCKS_X_PLANE_Y_NEG_Z_POS;
                     }
                 } else {
                     if (rayDifferenceZ > 0.) {
-                        nearbyBlocks = NEARBY_BLOCKS_X_PLANE_Y_POS_Z_NEG;
+                        nearbyBlocks = BlockOcclusionCulling.NEARBY_BLOCKS_X_PLANE_Y_POS_Z_NEG;
                     } else {
-                        nearbyBlocks = NEARBY_BLOCKS_X_PLANE_Y_POS_Z_POS;
+                        nearbyBlocks = BlockOcclusionCulling.NEARBY_BLOCKS_X_PLANE_Y_POS_Z_POS;
                     }
                 }
 
                 if (differenceX > 0.) {
-                    increase = DECREASE_X;
-                    decrease = INCREASE_X;
+                    increase = BlockOcclusionCulling.DECREASE_X;
+                    decrease = BlockOcclusionCulling.INCREASE_X;
                 } else {
-                    increase = INCREASE_X;
-                    decrease = DECREASE_X;
+                    increase = BlockOcclusionCulling.INCREASE_X;
+                    decrease = BlockOcclusionCulling.DECREASE_X;
                 }
             }
         } else if (absDifferenceY > absDifferenceZ) {
-            double factor = divide(differenceY, rayDifferenceY);
-            rayDifferenceZ = multiply(factor, rayDifferenceZ) - differenceZ;
-            rayDifferenceX = multiply(factor, rayDifferenceX) - differenceX;
+            final double factor = BlockOcclusionCulling.divide(differenceY, rayDifferenceY);
+            rayDifferenceZ = BlockOcclusionCulling.multiply(factor, rayDifferenceZ) - differenceZ;
+            rayDifferenceX = BlockOcclusionCulling.multiply(factor, rayDifferenceX) - differenceX;
 
             if (rayDifferenceZ > 0.) {
                 if (rayDifferenceX > 0.) {
-                    nearbyBlocks = NEARBY_BLOCKS_Y_PLANE_Z_NEG_X_NEG;
+                    nearbyBlocks = BlockOcclusionCulling.NEARBY_BLOCKS_Y_PLANE_Z_NEG_X_NEG;
                 } else {
-                    nearbyBlocks = NEARBY_BLOCKS_Y_PLANE_Z_NEG_X_POS;
+                    nearbyBlocks = BlockOcclusionCulling.NEARBY_BLOCKS_Y_PLANE_Z_NEG_X_POS;
                 }
             } else {
                 if (rayDifferenceX > 0.) {
-                    nearbyBlocks = NEARBY_BLOCKS_Y_PLANE_Z_POS_X_NEG;
+                    nearbyBlocks = BlockOcclusionCulling.NEARBY_BLOCKS_Y_PLANE_Z_POS_X_NEG;
                 } else {
-                    nearbyBlocks = NEARBY_BLOCKS_Y_PLANE_Z_POS_X_POS;
+                    nearbyBlocks = BlockOcclusionCulling.NEARBY_BLOCKS_Y_PLANE_Z_POS_X_POS;
                 }
             }
 
             if (differenceY > 0.) {
-                increase = DECREASE_Y;
-                decrease = INCREASE_Y;
+                increase = BlockOcclusionCulling.DECREASE_Y;
+                decrease = BlockOcclusionCulling.INCREASE_Y;
             } else {
-                increase = INCREASE_Y;
-                decrease = DECREASE_Y;
+                increase = BlockOcclusionCulling.INCREASE_Y;
+                decrease = BlockOcclusionCulling.DECREASE_Y;
             }
         } else {
-            double factor = divide(differenceZ, rayDifferenceZ);
-            rayDifferenceX = multiply(factor, rayDifferenceX) - differenceX;
-            rayDifferenceY = multiply(factor, rayDifferenceY) - differenceY;
+            final double factor = BlockOcclusionCulling.divide(differenceZ, rayDifferenceZ);
+            rayDifferenceX = BlockOcclusionCulling.multiply(factor, rayDifferenceX) - differenceX;
+            rayDifferenceY = BlockOcclusionCulling.multiply(factor, rayDifferenceY) - differenceY;
 
             if (rayDifferenceX > 0.) {
                 if (rayDifferenceY > 0.) {
-                    nearbyBlocks = NEARBY_BLOCKS_Z_PLANE_X_NEG_Y_NEG;
+                    nearbyBlocks = BlockOcclusionCulling.NEARBY_BLOCKS_Z_PLANE_X_NEG_Y_NEG;
                 } else {
-                    nearbyBlocks = NEARBY_BLOCKS_Z_PLANE_X_NEG_Y_POS;
+                    nearbyBlocks = BlockOcclusionCulling.NEARBY_BLOCKS_Z_PLANE_X_NEG_Y_POS;
                 }
             } else {
                 if (rayDifferenceY > 0.) {
-                    nearbyBlocks = NEARBY_BLOCKS_Z_PLANE_X_POS_Y_NEG;
+                    nearbyBlocks = BlockOcclusionCulling.NEARBY_BLOCKS_Z_PLANE_X_POS_Y_NEG;
                 } else {
-                    nearbyBlocks = NEARBY_BLOCKS_Z_PLANE_X_POS_Y_POS;
+                    nearbyBlocks = BlockOcclusionCulling.NEARBY_BLOCKS_Z_PLANE_X_POS_Y_POS;
                 }
             }
 
             if (differenceZ > 0.) {
-                increase = DECREASE_Z;
-                decrease = INCREASE_Z;
+                increase = BlockOcclusionCulling.DECREASE_Z;
+                decrease = BlockOcclusionCulling.INCREASE_Z;
             } else {
-                increase = INCREASE_Z;
-                decrease = DECREASE_Z;
+                increase = BlockOcclusionCulling.INCREASE_Z;
+                decrease = BlockOcclusionCulling.DECREASE_Z;
             }
         }
 
         for (int step = 0; step < nearbyBlocks.length; step++) {
             nearbyBlocks[step].accept(ray);
 
-            if (blockOcclusionGetter.isOccludingNearby(ray[0], ray[1], ray[2])) {
+            if (this.blockOcclusionGetter.isOccludingNearby(ray[0], ray[1], ray[2])) {
                 continue;
             }
 
@@ -195,7 +218,7 @@ public final class BlockOcclusionCulling {
             rayY = ray[1];
             rayZ = ray[2];
 
-            if (rayX == x && rayY == y && rayZ == z || !blockOcclusionGetter.isOccludingNearby(rayX, rayY, rayZ)) {
+            if (rayX == x && rayY == y && rayZ == z || !this.blockOcclusionGetter.isOccludingNearby(rayX, rayY, rayZ)) {
                 return false;
             }
 
@@ -205,11 +228,11 @@ public final class BlockOcclusionCulling {
         return true;
     }
 
-    private static double divide(double dividend, double divisor) {
+    private static double divide(final double dividend, final double divisor) {
         return (divisor == 0. && !Double.isNaN(dividend) ? Math.copySign(1., dividend) : dividend) / divisor;
     }
 
-    private static double multiply(double factor1, double factor2) {
+    private static double multiply(final double factor1, final double factor2) {
         return (factor2 == 0. ? Math.signum(factor1) : factor1) * factor2;
     }
 
@@ -220,19 +243,20 @@ public final class BlockOcclusionCulling {
 
     @FunctionalInterface
     public interface BlockIteratorFactory {
-        BlockIterator getBlockIterator(int x, int y, int z, double startX, double startY, double startZ, double directionX, double directionY, double directionZ, double distance);
+        BlockIterator getBlockIterator(int x, int y, int z, double startX, double startY, double startZ,
+                double directionX, double directionY, double directionZ, double distance);
     }
 
     @FunctionalInterface
     public interface BlockOcclusionGetter {
         boolean isOccluding(int x, int y, int z);
 
-        default boolean isOccludingRay(int x, int y, int z) {
-            return isOccluding(x, y, z);
+        default boolean isOccludingRay(final int x, final int y, final int z) {
+            return this.isOccluding(x, y, z);
         }
 
-        default boolean isOccludingNearby(int x, int y, int z) {
-            return isOccluding(x, y, z);
+        default boolean isOccludingNearby(final int x, final int y, final int z) {
+            return this.isOccluding(x, y, z);
         }
     }
 }

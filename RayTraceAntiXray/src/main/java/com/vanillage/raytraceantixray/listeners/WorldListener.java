@@ -22,36 +22,48 @@ import java.util.stream.Collectors;
 public final class WorldListener implements Listener {
     private final RayTraceAntiXray plugin;
 
-    public WorldListener(RayTraceAntiXray plugin) {
+    public WorldListener(final RayTraceAntiXray plugin) {
         this.plugin = plugin;
     }
 
     @EventHandler
-    public void onWorldInit(WorldInitEvent event) {
-        handleLoad(plugin, event.getWorld());
+    public void onWorldInit(final WorldInitEvent event) {
+        WorldListener.handleLoad(this.plugin, event.getWorld());
     }
 
     @EventHandler
-    public void onWorldUnload(WorldUnloadEvent e) {
-        handleUnload(plugin, e.getWorld());
+    public void onWorldUnload(final WorldUnloadEvent e) {
+        WorldListener.handleUnload(this.plugin, e.getWorld());
     }
 
-    public static void handleLoad(RayTraceAntiXray plugin, World world) {
+    public static void handleLoad(final RayTraceAntiXray plugin, final World world) {
         if (plugin.isEnabled(world)) {
-            FileConfiguration config = plugin.getConfig();
-            String worldName = world.getName();
-            boolean rayTraceThirdPerson = config.getBoolean("world-settings." + worldName + ".anti-xray.ray-trace-third-person", config.getBoolean("world-settings.default.anti-xray.ray-trace-third-person"));
-            double rayTraceDistance = Math.max(config.getDouble("world-settings." + worldName + ".anti-xray.ray-trace-distance", config.getDouble("world-settings.default.anti-xray.ray-trace-distance")), 0.);
-            boolean rehideBlocks = config.getBoolean("world-settings." + worldName + ".anti-xray.rehide-blocks", config.getBoolean("world-settings.default.anti-xray.rehide-blocks"));
-            double rehideDistance = Math.max(config.getDouble("world-settings." + worldName + ".anti-xray.rehide-distance", config.getDouble("world-settings.default.anti-xray.rehide-distance")), 0.);
-            int maxRayTraceBlockCountPerChunk = Math.max(config.getInt("world-settings." + worldName + ".anti-xray.max-ray-trace-block-count-per-chunk", config.getInt("world-settings.default.anti-xray.max-ray-trace-block-count-per-chunk")), 0);
-            List<String> rayTraceBlocks = config.getList("world-settings." + worldName + ".anti-xray.ray-trace-blocks", config.getList("world-settings.default.anti-xray.ray-trace-blocks")).stream().filter(Objects::nonNull).map(String::valueOf).collect(Collectors.toList());
-            List<String> bypassRehideBlocks = config
+            final FileConfiguration config = plugin.getConfig();
+            final String worldName = world.getName();
+            final boolean rayTraceThirdPerson = config.getBoolean(
+                    "world-settings." + worldName + ".anti-xray.ray-trace-third-person",
+                    config.getBoolean("world-settings.default.anti-xray.ray-trace-third-person"));
+            final double rayTraceDistance = Math
+                    .max(config.getDouble("world-settings." + worldName + ".anti-xray.ray-trace-distance",
+                            config.getDouble("world-settings.default.anti-xray.ray-trace-distance")), 0.);
+            final boolean rehideBlocks = config.getBoolean("world-settings." + worldName + ".anti-xray.rehide-blocks",
+                    config.getBoolean("world-settings.default.anti-xray.rehide-blocks"));
+            final double rehideDistance = Math
+                    .max(config.getDouble("world-settings." + worldName + ".anti-xray.rehide-distance",
+                            config.getDouble("world-settings.default.anti-xray.rehide-distance")), 0.);
+            final int maxRayTraceBlockCountPerChunk = Math
+                    .max(config.getInt("world-settings." + worldName + ".anti-xray.max-ray-trace-block-count-per-chunk",
+                            config.getInt("world-settings.default.anti-xray.max-ray-trace-block-count-per-chunk")), 0);
+            final List<String> rayTraceBlocks = config
+                    .getList("world-settings." + worldName + ".anti-xray.ray-trace-blocks",
+                            config.getList("world-settings.default.anti-xray.ray-trace-blocks"))
+                    .stream().filter(Objects::nonNull).map(String::valueOf).collect(Collectors.toList());
+            final List<String> bypassRehideBlocks = config
                     .getList("world-settings." + worldName + ".anti-xray.bypass-rehide-blocks",
                             config.getList("world-settings.default.anti-xray.bypass-rehide-blocks"))
                     .stream().filter(Objects::nonNull).map(String::valueOf).collect(Collectors.toList());
-            ServerLevel serverLevel = ((CraftWorld) world).getHandle();
-            ChunkPacketBlockControllerAntiXray controller = new ChunkPacketBlockControllerAntiXray(
+            final ServerLevel serverLevel = ((CraftWorld) world).getHandle();
+            final ChunkPacketBlockControllerAntiXray controller = new ChunkPacketBlockControllerAntiXray(
                     plugin,
                     ((CraftWorld) world).getHandle().chunkPacketBlockController,
                     rayTraceThirdPerson,
@@ -62,11 +74,10 @@ public final class WorldListener implements Listener {
                     rayTraceBlocks.isEmpty() ? null : rayTraceBlocks,
                     bypassRehideBlocks.isEmpty() ? null : bypassRehideBlocks,
                     serverLevel,
-                    MinecraftServer.getServer().executor
-            );
+                    MinecraftServer.getServer().executor);
 
             try {
-                Field field = Level.class.getDeclaredField("chunkPacketBlockController");
+                final Field field = Level.class.getDeclaredField("chunkPacketBlockController");
                 field.setAccessible(true);
                 field.set(serverLevel, controller);
             } catch (NoSuchFieldException | IllegalAccessException e) {
@@ -75,12 +86,13 @@ public final class WorldListener implements Listener {
         }
     }
 
-    public static void handleUnload(RayTraceAntiXray plugin, World w) {
+    public static void handleUnload(final RayTraceAntiXray plugin, final World w) {
         if (((CraftWorld) w).getHandle().chunkPacketBlockController instanceof ChunkPacketBlockControllerAntiXray) {
-            ChunkPacketBlockController oldController = ((ChunkPacketBlockControllerAntiXray) ((CraftWorld) w).getHandle().chunkPacketBlockController).getOldController();
+            final ChunkPacketBlockController oldController = ((ChunkPacketBlockControllerAntiXray) ((CraftWorld) w)
+                    .getHandle().chunkPacketBlockController).getOldController();
 
             try {
-                Field field = Level.class.getDeclaredField("chunkPacketBlockController");
+                final Field field = Level.class.getDeclaredField("chunkPacketBlockController");
                 field.setAccessible(true);
                 field.set(((CraftWorld) w).getHandle(), oldController);
             } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {

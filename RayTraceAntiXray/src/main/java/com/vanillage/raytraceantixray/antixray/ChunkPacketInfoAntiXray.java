@@ -10,21 +10,22 @@ public final class ChunkPacketInfoAntiXray extends ChunkPacketInfo<BlockState> i
     private final ChunkPacketBlockControllerAntiXray chunkPacketBlockControllerAntiXray;
     private LevelChunk[] nearbyChunks;
 
-    public ChunkPacketInfoAntiXray(ClientboundLevelChunkWithLightPacket chunkPacket, LevelChunk chunk, ChunkPacketBlockControllerAntiXray chunkPacketBlockControllerAntiXray) {
+    public ChunkPacketInfoAntiXray(final ClientboundLevelChunkWithLightPacket chunkPacket, final LevelChunk chunk,
+            final ChunkPacketBlockControllerAntiXray chunkPacketBlockControllerAntiXray) {
         super(chunkPacket, chunk);
         this.chunkPacketBlockControllerAntiXray = chunkPacketBlockControllerAntiXray;
     }
 
     public LevelChunk[] getNearbyChunks() {
-        return nearbyChunks;
+        return this.nearbyChunks;
     }
 
-    public void setNearbyChunks(LevelChunk... nearbyChunks) {
+    public void setNearbyChunks(final LevelChunk... nearbyChunks) {
         this.nearbyChunks = nearbyChunks;
     }
 
     @Override
     public void run() {
-        chunkPacketBlockControllerAntiXray.obfuscate(this);
+        this.chunkPacketBlockControllerAntiXray.obfuscate(this);
     }
 }
