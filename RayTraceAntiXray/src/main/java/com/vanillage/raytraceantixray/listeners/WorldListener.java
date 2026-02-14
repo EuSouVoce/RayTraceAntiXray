@@ -7,7 +7,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import org.bukkit.World;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -38,30 +37,16 @@ public final class WorldListener implements Listener {
 
     public static void handleLoad(final RayTraceAntiXray plugin, final World world) {
         if (plugin.isEnabled(world)) {
-            final FileConfiguration config = plugin.getConfig();
-            final String worldName = world.getName();
-            final boolean rayTraceThirdPerson = config.getBoolean(
-                    "world-settings." + worldName + ".anti-xray.ray-trace-third-person",
-                    config.getBoolean("world-settings.default.anti-xray.ray-trace-third-person"));
-            final double rayTraceDistance = Math
-                    .max(config.getDouble("world-settings." + worldName + ".anti-xray.ray-trace-distance",
-                            config.getDouble("world-settings.default.anti-xray.ray-trace-distance")), 0.);
-            final boolean rehideBlocks = config.getBoolean("world-settings." + worldName + ".anti-xray.rehide-blocks",
-                    config.getBoolean("world-settings.default.anti-xray.rehide-blocks"));
-            final double rehideDistance = Math
-                    .max(config.getDouble("world-settings." + worldName + ".anti-xray.rehide-distance",
-                            config.getDouble("world-settings.default.anti-xray.rehide-distance")), 0.);
-            final int maxRayTraceBlockCountPerChunk = Math
-                    .max(config.getInt("world-settings." + worldName + ".anti-xray.max-ray-trace-block-count-per-chunk",
-                            config.getInt("world-settings.default.anti-xray.max-ray-trace-block-count-per-chunk")), 0);
-            final List<String> rayTraceBlocks = config
-                    .getList("world-settings." + worldName + ".anti-xray.ray-trace-blocks",
-                            config.getList("world-settings.default.anti-xray.ray-trace-blocks"))
-                    .stream().filter(Objects::nonNull).map(String::valueOf).collect(Collectors.toList());
-            final List<String> bypassRehideBlocks = config
-                    .getList("world-settings." + worldName + ".anti-xray.bypass-rehide-blocks",
-                            config.getList("world-settings.default.anti-xray.bypass-rehide-blocks"))
-                    .stream().filter(Objects::nonNull).map(String::valueOf).collect(Collectors.toList());
+            final var antiXrayConfig = plugin.getWorldAntiXray(world);
+            final boolean rayTraceThirdPerson = antiXrayConfig.rayTraceThirdPerson();
+            final double rayTraceDistance = Math.max(antiXrayConfig.rayTraceDistance(), 0.0d);
+            final boolean rehideBlocks = antiXrayConfig.rehideBlocks();
+            final double rehideDistance = Math.max(antiXrayConfig.rehideDistance(), 0.0d);
+            final int maxRayTraceBlockCountPerChunk = Math.max(antiXrayConfig.maxRayTraceBlockCountPerChunk(), 0);
+            final List<String> rayTraceBlocks = antiXrayConfig.rayTraceBlocks().stream().filter(Objects::nonNull)
+                .map(String::valueOf).collect(Collectors.toList());
+            final List<String> bypassRehideBlocks = antiXrayConfig.bypassRehideBlocks().stream()
+                .filter(Objects::nonNull).map(String::valueOf).collect(Collectors.toList());
             final ServerLevel serverLevel = ((CraftWorld) world).getHandle();
             final ChunkPacketBlockControllerAntiXray controller = new ChunkPacketBlockControllerAntiXray(
                     plugin,

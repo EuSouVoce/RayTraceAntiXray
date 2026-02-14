@@ -4,6 +4,7 @@ import com.google.common.collect.MapMaker;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.vanillage.raytraceantixray.antixray.ChunkPacketBlockControllerAntiXray;
 import com.vanillage.raytraceantixray.commands.RayTraceAntiXrayTabExecutor;
+import com.vanillage.raytraceantixray.config.PluginConfig;
 import com.vanillage.raytraceantixray.data.ChunkBlocks;
 import com.vanillage.raytraceantixray.data.PlayerData;
 import com.vanillage.raytraceantixray.data.VectorialLocation;
@@ -28,7 +29,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
@@ -40,9 +40,16 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.Vector;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
+
+import space.arim.dazzleconf.Configuration;
+import space.arim.dazzleconf.StandardErrorPrint;
+import space.arim.dazzleconf.backend.Backend;
+import space.arim.dazzleconf.backend.PathRoot;
+import space.arim.dazzleconf.backend.yaml.YamlBackend;
 
 public final class RayTraceAntiXray extends JavaPlugin {
     // private volatile Configuration configuration;
@@ -57,6 +64,7 @@ public final class RayTraceAntiXray extends JavaPlugin {
     private boolean debug;
     private volatile EnumMap<GameMode, Integer> rayTraceTicksByGameMode = new EnumMap<>(GameMode.class);
     private volatile boolean alignRayTraceTicksTo20;
+    private volatile PluginConfig configuration = PluginConfig.defaults();
     // Set of messages and errors this plugin instance has nagged about.
     // Used to prevent console spam.
     private final Set<String> nagged = Collections.synchronizedSet(new HashSet<>());
@@ -72,10 +80,8 @@ public final class RayTraceAntiXray extends JavaPlugin {
         }
         this.nagged.clear();
 
-        this.saveDefaultConfig();
-        final FileConfiguration config = this.getConfig();
-        config.options().copyDefaults(true);
-        this.reloadConfig();
+        this.loadConfiguration();
+        final PluginConfig.Settings.AntiXray antiXraySettings = this.configuration.settings().antiXray();
 
         // saveConfig();
         // configuration = config;
@@ -89,17 +95,17 @@ public final class RayTraceAntiXray extends JavaPlugin {
         // A scheduled thread pool with a task per player would also be possible but
         // then there's no common tick.
         this.executorService = Executors.newFixedThreadPool(
-                Math.max(config.getInt("settings.anti-xray.ray-trace-threads"), 1),
+            Math.max(antiXraySettings.rayTraceThreads(), 1),
                 new ThreadFactoryBuilder().setThreadFactory(Executors.defaultThreadFactory())
                         .setNameFormat("RayTraceAntiXray raytrace thread %d").setDaemon(true).build());
         // Use a timer instead of a single thread scheduled executor because there is no
         // equivalent for the timer's schedule method.
         this.timer = new Timer("RayTraceAntiXray tick thread", true);
         this.timer.schedule(new RayTraceTimerTask(this), 0L,
-                Math.max(config.getLong("settings.anti-xray.ms-per-ray-trace-tick"), 1L));
-        this.updateTicks = Math.max(config.getLong("settings.anti-xray.update-ticks"), 1L);
-        this.debug = config.getBoolean("settings.debug", false);
-        this.loadRayTraceIntervalsConfig(config);
+            Math.max(antiXraySettings.msPerRayTraceTick(), 1L));
+        this.updateTicks = Math.max(antiXraySettings.updateTicks(), 1L);
+        this.debug = this.configuration.settings().debug();
+        this.loadRayTraceIntervalsConfig(this.configuration);
 
         if (!BukkitUtil.IS_FOLIA) {
             new UpdateBukkitRunnable(this).runTaskTimer(this, 0L, this.updateTicks);
@@ -288,9 +294,7 @@ public final class RayTraceAntiXray extends JavaPlugin {
         final AntiXray antiXray = ((CraftWorld) world).getHandle().paperConfig().anticheat.antiXray;
 
         if (antiXray.enabled && antiXray.engineMode == EngineMode.HIDE) {
-            final FileConfiguration config = this.getConfig();
-            return config.getBoolean("world-settings." + world.getName() + ".anti-xray.ray-trace",
-                    config.getBoolean("world-settings.default.anti-xray.ray-trace"));
+            return this.getWorldAntiXray(world).rayTrace();
         }
 
         return false;
@@ -453,20 +457,50 @@ public final class RayTraceAntiXray extends JavaPlugin {
         return value == null ? 4 : Math.max(value, 4);
     }
 
-    private void loadRayTraceIntervalsConfig(final FileConfiguration config) {
-        final String basePath = "settings.anti-xray.ray-trace-ticks-by-gamemode.";
-        this.alignRayTraceTicksTo20 = config.getBoolean("settings.anti-xray.align-ray-trace-ticks-to-20", false);
+    private void loadRayTraceIntervalsConfig(final PluginConfig config) {
+        this.alignRayTraceTicksTo20 = config.settings().antiXray().alignRayTraceTicksTo20();
+        final PluginConfig.Settings.AntiXray.RayTraceTicksByGamemode ticks = config.settings().antiXray()
+                .rayTraceTicksByGamemode();
 
         final EnumMap<GameMode, Integer> values = new EnumMap<>(GameMode.class);
-        values.put(GameMode.SURVIVAL,
-                this.normalizeRayTraceTicks(config.getInt(basePath + "survival", 4), basePath + "survival"));
-        values.put(GameMode.ADVENTURE,
-                this.normalizeRayTraceTicks(config.getInt(basePath + "adventure", 4), basePath + "adventure"));
-        values.put(GameMode.CREATIVE,
-                this.normalizeRayTraceTicks(config.getInt(basePath + "creative", 4), basePath + "creative"));
-        values.put(GameMode.SPECTATOR,
-                this.normalizeRayTraceTicks(config.getInt(basePath + "spectator", 8), basePath + "spectator"));
+        values.put(GameMode.SURVIVAL, this.normalizeRayTraceTicks(ticks.survival(), "survival"));
+        values.put(GameMode.ADVENTURE, this.normalizeRayTraceTicks(ticks.adventure(), "adventure"));
+        values.put(GameMode.CREATIVE, this.normalizeRayTraceTicks(ticks.creative(), "creative"));
+        values.put(GameMode.SPECTATOR, this.normalizeRayTraceTicks(ticks.spectator(), "spectator"));
         this.rayTraceTicksByGameMode = values;
+    }
+
+    public PluginConfig.WorldSettings.AntiXray getWorldAntiXray(final World world) {
+        final Map<String, PluginConfig.WorldSettings> worldSettings = this.configuration.worldSettings();
+        final PluginConfig.WorldSettings specific = worldSettings.get(world.getName());
+        if (specific != null && specific.antiXray() != null) {
+            return specific.antiXray();
+        }
+
+        final PluginConfig.WorldSettings defaults = worldSettings.get("default");
+        if (defaults != null && defaults.antiXray() != null) {
+            return defaults.antiXray();
+        }
+
+        return PluginConfig.defaults().worldSettings().get("default").antiXray();
+    }
+
+    private void loadConfiguration() {
+        final File dataFolder = this.getDataFolder();
+        if (!dataFolder.exists()) {
+            dataFolder.mkdirs();
+        }
+
+        final File configFile = new File(dataFolder, "config.yml");
+        if (!configFile.exists()) {
+            this.saveResource("config.yml", false);
+        }
+
+        final Path path = configFile.toPath();
+        final Backend backend = new YamlBackend(new PathRoot(path));
+        final Configuration<PluginConfig> definition = Configuration.defaultBuilder(PluginConfig.class).build();
+        this.configuration = definition.configureOrFallback(backend,
+                new StandardErrorPrint(output -> this.getLogger().warning(output.toString())));
     }
 
     private int normalizeRayTraceTicks(final int configured, final String path) {
