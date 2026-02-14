@@ -39,6 +39,15 @@ settings:
     update-ticks: 2
     ms-per-ray-trace-tick: 50
     ray-trace-threads: 2
+    # Per-player raytrace cadence by current game mode (in ticks).
+    # Minimum accepted value is 4 ticks.
+    # If align-ray-trace-ticks-to-20 is true, non-divisors of 20 are rounded to nearest of: 4, 5, 10, 20.
+    align-ray-trace-ticks-to-20: false
+    ray-trace-ticks-by-gamemode:
+      survival: 4
+      adventure: 4
+      creative: 4
+      spectator: 8
 world-settings:
   default:
     anti-xray:

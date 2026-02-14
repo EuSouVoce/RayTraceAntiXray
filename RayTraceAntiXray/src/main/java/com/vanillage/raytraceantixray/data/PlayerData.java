@@ -25,6 +25,7 @@ public final class PlayerData implements Callable<Void> {
     private Callable<Void> callable;
     private DuplexPacketHandler packetHandler;
     private volatile VectorialLocation[] locations;
+    private volatile int rayTraceIntervalTicks = 4;
 
     public PlayerData(final VectorialLocation[] locations) {
         this.locations = locations;
@@ -60,6 +61,14 @@ public final class PlayerData implements Callable<Void> {
 
     public void setPacketHandler(final DuplexPacketHandler packetHandler) {
         this.packetHandler = packetHandler;
+    }
+
+    public int getRayTraceIntervalTicks() {
+        return this.rayTraceIntervalTicks;
+    }
+
+    public void setRayTraceIntervalTicks(final int rayTraceIntervalTicks) {
+        this.rayTraceIntervalTicks = Math.max(rayTraceIntervalTicks, 4);
     }
 
     /**

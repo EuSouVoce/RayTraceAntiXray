@@ -25,6 +25,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -54,6 +55,8 @@ public final class RayTraceAntiXray extends JavaPlugin {
     private Timer timer;
     private long updateTicks = 1L;
     private boolean debug;
+    private volatile EnumMap<GameMode, Integer> rayTraceTicksByGameMode = new EnumMap<>(GameMode.class);
+    private volatile boolean alignRayTraceTicksTo20;
     // Set of messages and errors this plugin instance has nagged about.
     // Used to prevent console spam.
     private final Set<String> nagged = Collections.synchronizedSet(new HashSet<>());
@@ -96,6 +99,7 @@ public final class RayTraceAntiXray extends JavaPlugin {
                 Math.max(config.getLong("settings.anti-xray.ms-per-ray-trace-tick"), 1L));
         this.updateTicks = Math.max(config.getLong("settings.anti-xray.update-ticks"), 1L);
         this.debug = config.getBoolean("settings.debug", false);
+        this.loadRayTraceIntervalsConfig(config);
 
         if (!BukkitUtil.IS_FOLIA) {
             new UpdateBukkitRunnable(this).runTaskTimer(this, 0L, this.updateTicks);
@@ -321,6 +325,7 @@ public final class RayTraceAntiXray extends JavaPlugin {
         final PlayerData playerData = new PlayerData(
                 RayTraceAntiXray.getLocations(player, new VectorialLocation(effectiveLocation)));
         playerData.setCallable(new RayTraceCallable(this, playerData));
+        playerData.setRayTraceIntervalTicks(this.getRayTraceIntervalTicks(player.getGameMode()));
 
         final PlayerData oldData = this.getPlayerData().get(player.getUniqueId());
 
@@ -440,6 +445,51 @@ public final class RayTraceAntiXray extends JavaPlugin {
     public static boolean hasController(final World world) {
         return ((CraftWorld) world)
                 .getHandle().chunkPacketBlockController instanceof ChunkPacketBlockControllerAntiXray;
+    }
+
+    public int getRayTraceIntervalTicks(final GameMode gameMode) {
+        final EnumMap<GameMode, Integer> map = this.rayTraceTicksByGameMode;
+        final Integer value = map.get(gameMode == null ? GameMode.SURVIVAL : gameMode);
+        return value == null ? 4 : Math.max(value, 4);
+    }
+
+    private void loadRayTraceIntervalsConfig(final FileConfiguration config) {
+        final String basePath = "settings.anti-xray.ray-trace-ticks-by-gamemode.";
+        this.alignRayTraceTicksTo20 = config.getBoolean("settings.anti-xray.align-ray-trace-ticks-to-20", false);
+
+        final EnumMap<GameMode, Integer> values = new EnumMap<>(GameMode.class);
+        values.put(GameMode.SURVIVAL,
+                this.normalizeRayTraceTicks(config.getInt(basePath + "survival", 4), basePath + "survival"));
+        values.put(GameMode.ADVENTURE,
+                this.normalizeRayTraceTicks(config.getInt(basePath + "adventure", 4), basePath + "adventure"));
+        values.put(GameMode.CREATIVE,
+                this.normalizeRayTraceTicks(config.getInt(basePath + "creative", 4), basePath + "creative"));
+        values.put(GameMode.SPECTATOR,
+                this.normalizeRayTraceTicks(config.getInt(basePath + "spectator", 8), basePath + "spectator"));
+        this.rayTraceTicksByGameMode = values;
+    }
+
+    private int normalizeRayTraceTicks(final int configured, final String path) {
+        final int value = Math.max(configured, 4);
+        if (!this.alignRayTraceTicksTo20 || 20 % value == 0) {
+            return value;
+        }
+
+        final int[] divisors = { 4, 5, 10, 20 };
+        int best = divisors[0];
+        int bestDistance = Math.abs(value - best);
+        for (int i = 1; i < divisors.length; i++) {
+            final int candidate = divisors[i];
+            final int distance = Math.abs(value - candidate);
+            if (distance < bestDistance) {
+                best = candidate;
+                bestDistance = distance;
+            }
+        }
+
+        this.getLogger().log(Level.INFO,
+                "Normalized " + path + " from " + value + " to " + best + " (nearest divisor of 20)");
+        return best;
     }
 
 }

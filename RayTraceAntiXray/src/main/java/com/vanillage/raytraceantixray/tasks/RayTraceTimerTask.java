@@ -24,6 +24,7 @@ public final class RayTraceTimerTask extends TimerTask {
 
     private final RayTraceAntiXray plugin;
     private final Stopwatch watch = Stopwatch.createUnstarted();
+    private long logicalTicks;
     private long timerRuns;
     private Instant lastNotify = Instant.MIN;
 
@@ -52,7 +53,10 @@ public final class RayTraceTimerTask extends TimerTask {
                 this.lastNotify = Instant.MIN;
             }
 
+            this.logicalTicks++;
+
             final List<Callable<Void>> tasks = this.plugin.getPlayerData().values().stream()
+                    .filter(playerData -> this.logicalTicks % Math.max(playerData.getRayTraceIntervalTicks(), 4) == 0)
                     .map(PlayerData::getCallable)
                     .filter(Objects::nonNull)
                     .toList();

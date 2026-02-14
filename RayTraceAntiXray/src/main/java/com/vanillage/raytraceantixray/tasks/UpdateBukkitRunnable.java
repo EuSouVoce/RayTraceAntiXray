@@ -103,6 +103,7 @@ public final class UpdateBukkitRunnable extends BukkitRunnable implements Consum
         vec.setY(vec.getY() + player.getEyeHeight());
         final VectorialLocation vecLoc = new VectorialLocation(world, vec, loc.getDirection());
         playerData.setLocations(RayTraceAntiXray.getLocations(player, vecLoc));
+        playerData.setRayTraceIntervalTicks(this.plugin.getRayTraceIntervalTicks(player.getGameMode()));
 
         final ConcurrentMap<LongWrapper, ChunkBlocks> chunks = playerData.getChunks();
         final ServerLevel serverLevel = ((CraftWorld) world).getHandle();
