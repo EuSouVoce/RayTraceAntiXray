@@ -8,11 +8,21 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 
-public final class PlayerData implements Callable<Object> {
+/**
+ * Mutable per-player state shared across packet thread, async workers and sync update task.
+ * <p>
+ * Threading notes:
+ * <ul>
+ * <li>{@code chunks} and {@code results} are lock-free concurrent structures.</li>
+ * <li>{@code locations} is volatile and can be swapped atomically.</li>
+ * <li>{@code callable} is intentionally nullable to allow safe no-op behavior during rebind.</li>
+ * </ul>
+ */
+public final class PlayerData implements Callable<Void> {
 
     private final ConcurrentMap<LongWrapper, ChunkBlocks> chunks = new ConcurrentHashMap<>();
     private final Queue<Result> results = new ConcurrentLinkedQueue<>();
-    private Callable<?> callable;
+    private Callable<Void> callable;
     private DuplexPacketHandler packetHandler;
     private volatile VectorialLocation[] locations;
 
@@ -36,11 +46,11 @@ public final class PlayerData implements Callable<Object> {
         return this.results;
     }
 
-    public Callable<?> getCallable() {
+    public Callable<Void> getCallable() {
         return this.callable;
     }
 
-    public void setCallable(final Callable<?> callable) {
+    public void setCallable(final Callable<Void> callable) {
         this.callable = callable;
     }
 
@@ -52,8 +62,17 @@ public final class PlayerData implements Callable<Object> {
         this.packetHandler = packetHandler;
     }
 
+    /**
+     * Delegates execution to the currently bound player callable.
+     * <p>
+     * Returning {@code null} on a temporarily missing callable avoids hard failures during
+     * player-data replacement races.
+     */
     @Override
-    public Object call() throws Exception {
+    public Void call() throws Exception {
+        if (this.callable == null) {
+            return null;
+        }
         return this.callable.call();
     }
 

@@ -14,6 +14,11 @@ import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.logging.Level;
 
+/**
+ * Player lifecycle listener that creates and tears down per-player anti-xray runtime state.
+ * <p>
+ * The quit path is intentionally null-safe because disconnect and plugin-disable flows can race.
+ */
 public final class PlayerListener implements Listener {
     private final RayTraceAntiXray plugin;
 
@@ -46,11 +51,18 @@ public final class PlayerListener implements Listener {
         }
     }
 
+    /**
+     * Detaches packet handler and removes player state.
+     * <p>
+     * Detach is guarded because state may already be partially cleaned up by concurrent shutdown.
+     */
     @EventHandler
     public void onPlayerQuit(final PlayerQuitEvent event) {
         final PlayerData data = this.plugin.getPlayerData().get(event.getPlayer().getUniqueId());
         if (data != null) {
-            data.getPacketHandler().detach();
+            if (data.getPacketHandler() != null) {
+                data.getPacketHandler().detach();
+            }
             this.plugin.getPlayerData().remove(event.getPlayer().getUniqueId(), data);
         }
     }

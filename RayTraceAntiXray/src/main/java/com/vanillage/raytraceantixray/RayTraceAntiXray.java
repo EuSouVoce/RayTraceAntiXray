@@ -120,8 +120,7 @@ public final class RayTraceAntiXray extends JavaPlugin {
 
         // registerCommands();
         this.getCommand("raytraceantixray").setExecutor(new RayTraceAntiXrayTabExecutor(this));
-        this.getLogger().info(this.getPluginMeta().getDisplayName() + " enabled");
-    }
+        this.getLogger().info(this.getPluginMeta().getDisplayName()+ " EuSouVoce's ThreadSafe fork | Enabled");}
 
     @SuppressWarnings("unused")
     @Override
@@ -228,7 +227,7 @@ public final class RayTraceAntiXray extends JavaPlugin {
             }
         }
 
-        this.getLogger().info(this.getPluginMeta().getDisplayName() + " disabled");
+        this.getLogger().info(this.getPluginMeta().getDisplayName() + " EuSouVoce's ThreadSafe fork | Disabled");
     }
 
     public void reload() {
@@ -304,8 +303,23 @@ public final class RayTraceAntiXray extends JavaPlugin {
         return this.createPlayerDataFor(player, player.getEyeLocation());
     }
 
-    public PlayerData createPlayerDataFor(final Player player, final Location location) {
-        final PlayerData playerData = new PlayerData(RayTraceAntiXray.getLocations(player, new VectorialLocation(location)));
+    /**
+     * Creates or refreshes the per-player runtime state atomically.
+     * <p>
+     * The method is synchronized to prevent races between concurrent refresh triggers (packet,
+     * movement/update tick, join handling) that could otherwise attach duplicate handlers or publish
+     * partially initialized state.
+     * <p>
+     * If the provided location is missing/invalid, a fresh eye location is used as a safe fallback.
+     */
+    public synchronized PlayerData createPlayerDataFor(final Player player, final Location location) {
+        Location effectiveLocation = location;
+        if (effectiveLocation == null || effectiveLocation.getWorld() == null) {
+            effectiveLocation = player.getEyeLocation();
+        }
+
+        final PlayerData playerData = new PlayerData(
+                RayTraceAntiXray.getLocations(player, new VectorialLocation(effectiveLocation)));
         playerData.setCallable(new RayTraceCallable(this, playerData));
 
         final PlayerData oldData = this.getPlayerData().get(player.getUniqueId());

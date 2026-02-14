@@ -26,6 +26,18 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
 
+/**
+ * Main-thread update dispatcher that transforms async ray-trace results into packet updates.
+ * <p>
+ * This runnable acts as a synchronization boundary between:
+ * <ul>
+ * <li>async ray-trace computation queues, and</li>
+ * <li>main-thread world/chunk access and packet emission.</li>
+ * </ul>
+ * <p>
+ * Defensive checks are intentionally redundant: they absorb race windows where the player changes
+ * world, chunks get unloaded, or player data is replaced between enqueue and flush.
+ */
 public final class UpdateBukkitRunnable extends BukkitRunnable implements Consumer<ScheduledTask> {
     private final RayTraceAntiXray plugin;
     private final Player player;
@@ -55,14 +67,34 @@ public final class UpdateBukkitRunnable extends BukkitRunnable implements Consum
         this.run();
     }
 
+    /**
+     * Flushes pending block visibility results for a specific player.
+     * <p>
+     * Why this method is defensive:
+     * <ul>
+     * <li>Player data can be replaced while this runnable is iterating.</li>
+     * <li>Chunks referenced by queued results may already be stale or unloaded.</li>
+     * <li>World transitions may happen between async calculation and sync send.</li>
+     * </ul>
+     * In all such cases, the method exits or skips safely without throwing.
+     */
     public void update(final Player player) {
         final PlayerData playerData = this.plugin.getPlayerData().get(player.getUniqueId());
         if (playerData == null)
             return; // NPCs don't get added to the playerdata map.
 
-        final World world = playerData.getLocations()[0].getWorld();
+        final VectorialLocation[] locations = playerData.getLocations();
+        if (locations == null || locations.length == 0 || locations[0] == null) {
+            return;
+        }
+
+        final World world = locations[0].getWorld();
+        if (world == null) {
+            return;
+        }
 
         if (!player.getWorld().equals(world)) {
+            this.plugin.createPlayerDataFor(player, player.getEyeLocation());
             return;
         }
 
@@ -79,6 +111,10 @@ public final class UpdateBukkitRunnable extends BukkitRunnable implements Consum
         Result result;
 
         while ((result = results.poll()) != null) {
+            if (result.getChunkBlocks() == null || result.getBlock() == null) {
+                continue;
+            }
+
             final ChunkBlocks chunkBlocks = result.getChunkBlocks();
 
             // Check if the client still has the chunk loaded and if it wasn't resent in the
@@ -139,6 +175,12 @@ public final class UpdateBukkitRunnable extends BukkitRunnable implements Consum
         }
     }
 
+    /**
+     * Sends a packet directly through the channel to preserve ordering assumptions relative to
+     * already queued chunk packets.
+     * <p>
+     * Returns {@code false} if the connection/channel is no longer valid.
+     */
     private static boolean sendPacketImmediately(final Player player, final Object packet) {
         final ServerGamePacketListenerImpl connection = ((CraftPlayer) player).getHandle().connection;
 

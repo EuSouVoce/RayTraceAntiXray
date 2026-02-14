@@ -11,14 +11,25 @@ import net.minecraft.network.protocol.game.ClientboundForgetLevelChunkPacket;
 import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
 import net.minecraft.network.protocol.game.ClientboundRespawnPacket;
 import net.minecraft.world.level.chunk.LevelChunk;
-import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.Player;
 
 import java.util.HashMap;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentMap;
 
+/**
+ * Netty duplex handler responsible for tracking chunk packet lifecycle per player.
+ * <p>
+ * Threading model:
+ * <ul>
+ * <li>Runs on the Netty channel thread.</li>
+ * <li>Must avoid expensive world lookups and Bukkit state mutations that require main-thread affinity.</li>
+ * <li>Only touches lock-free player-local caches ({@link PlayerData#getChunks()}).</li>
+ * </ul>
+ * <p>
+ * The defensive checks in this class intentionally prefer dropping stale packet information over
+ * trying to recover aggressively from a possibly inconsistent state. This prevents hard crashes and
+ * avoids leaking world A data into world B after teleports/respawns.
+ */
 public class DuplexPacketHandler extends DuplexHandler {
 
     public static final String NAME = "com.vanillage.raytraceantixray:duplex_handler";
@@ -39,6 +50,18 @@ public class DuplexPacketHandler extends DuplexHandler {
         }
     }
 
+    /**
+     * Processes outgoing packet events and updates player-local ray-trace chunk cache.
+     * <p>
+     * The method is intentionally non-blocking and conservative:
+     * <ul>
+     * <li>Returns early on missing/stale references.</li>
+     * <li>Never forces chunk/world loads from Netty thread.</li>
+     * <li>Drops stale context on world mismatch to prevent cross-world contamination.</li>
+     * </ul>
+     *
+     * @return always {@code true} to keep packet pipeline flow uninterrupted.
+     */
     public boolean handle(final ChannelHandlerContext ctx, final Object msg, final ChannelPromise promise) {
         if (msg instanceof final ClientboundLevelChunkWithLightPacket packet) {
             // A player data instance is always bound to a world and defines what is to be
@@ -71,23 +94,7 @@ public class DuplexPacketHandler extends DuplexHandler {
 
             if (chunkBlocks == null) {
                 // RayTraceAntiXray is probably not enabled in this world (or other plugins
-                // bypass Anti-Xray).
-                // We can't determine the world from the chunk packet in this case.
-                // Thus we use the player's current (more up to date) world instead.
-                final Location location = this.player.getEyeLocation();
-                final ConcurrentMap<UUID, PlayerData> playerDataMap = this.plugin.getPlayerData();
-                final PlayerData playerData = playerDataMap.get(this.player.getUniqueId());
-
-                if (!location.getWorld().equals(playerData.getLocations()[0].getWorld())) {
-                    // Detected a world change.
-                    // In the event order listing above, this corresponds to (4) when
-                    // RayTraceAntiXray is disabled in world B.
-                    // The player's current world is world B since (2).
-                    // this shouldn't raise an exception as the handler is already created (we are
-                    // the handler)
-                    this.plugin.createPlayerDataFor(this.player, location);
-                }
-
+                // bypass Anti-Xray). Avoid touching Bukkit world/location APIs on Netty thread.
                 return true;
             }
 
@@ -102,34 +109,20 @@ public class DuplexPacketHandler extends DuplexHandler {
             }
 
             final CraftWorld world = chunk.getLevel().getWorld();
-            final ConcurrentMap<UUID, PlayerData> playerDataMap = this.plugin.getPlayerData();
-            final UUID uniqueId = this.player.getUniqueId();
-            PlayerData playerData = playerDataMap.get(uniqueId);
-            if (!world.equals(playerData.getLocations()[0].getWorld())) {
-                // Detected a world change.
-                // We need the player's current location to construct a new player data
-                // instance.
-                final Location location = this.player.getEyeLocation();
+            final PlayerData playerData = this.plugin.getPlayerData().get(this.player.getUniqueId());
+            if (playerData == null) {
+                return true;
+            }
 
-                if (!world.equals(location.getWorld())) {
-                    // The player has changed the world again since this chunk packet was sent.
-                    // (As described above, packets can be delayed.)
-                    // Example event order for this case:
-                    // (1) Chunk packet event of world A.
-                    // (2) Changed world event from world A to B.
-                    // (3) Changed world event from world B to C.
-                    // (4) Chunk packet event of world B.
-                    // (5) Chunk packet event of world C.
-                    // The previous chunk packet was from world A in (1).
-                    // The current chunk packet is from world B in (4) but the player is already in
-                    // world C.
-                    // We can ignore this chunk packet and wait until we get a chunk packet from
-                    // world C in (5).
-                    return true;
-                }
+            final var locations = playerData.getLocations();
+            if (locations == null || locations.length == 0 || locations[0] == null) {
+                return true;
+            }
 
-                // Renew the player data instance.
-                playerData = this.plugin.createPlayerDataFor(this.player, location);
+            if (!world.equals(locations[0].getWorld())) {
+                // Stale packet from previous world context; keep state consistent.
+                playerData.getChunks().clear();
+                return true;
             }
 
             // We need to copy the chunk blocks because the same chunk packet could have
@@ -141,16 +134,20 @@ public class DuplexPacketHandler extends DuplexHandler {
             // World changes are already handled above.
             // Technically removing chunks isn't necessary since we're using a weak
             // reference to the chunk.
-            this.plugin.getPlayerData().get(this.player.getUniqueId())
-                    .getChunks().remove(new LongWrapper(packet.pos().toLong()));
+            final PlayerData playerData = this.plugin.getPlayerData().get(this.player.getUniqueId());
+            if (playerData != null) {
+                playerData.getChunks().remove(new LongWrapper(packet.pos().toLong()));
+            }
         } else if (msg instanceof ClientboundRespawnPacket) {
             // As with world changes, chunk unload packets aren't sent on respawn.
             // All required chunks are (re)sent afterwards.
             // Thus we clear the chunks.
             // If respawning involves a world change, it will be handled in the next chunk
             // packet event.
-            this.plugin.getPlayerData().get(this.player.getUniqueId())
-                    .getChunks().clear();
+            final PlayerData playerData = this.plugin.getPlayerData().get(this.player.getUniqueId());
+            if (playerData != null) {
+                playerData.getChunks().clear();
+            }
         }
         return true;
     }

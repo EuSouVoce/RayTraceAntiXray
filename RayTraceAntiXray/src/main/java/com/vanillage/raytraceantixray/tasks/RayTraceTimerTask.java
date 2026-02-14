@@ -6,11 +6,20 @@ import com.vanillage.raytraceantixray.data.PlayerData;
 import com.vanillage.raytraceantixray.util.TimeFormatter;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Objects;
 import java.util.TimerTask;
+import java.util.concurrent.Callable;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
+/**
+ * Schedules and synchronizes per-player ray-trace jobs.
+ * <p>
+ * This timer task only orchestrates work; heavy computation runs inside the worker pool.
+ * It also contains shutdown guards so the timer can race safely with plugin disable.
+ */
 public final class RayTraceTimerTask extends TimerTask {
 
     private final RayTraceAntiXray plugin;
@@ -22,9 +31,19 @@ public final class RayTraceTimerTask extends TimerTask {
         this.plugin = plugin;
     }
 
+    /**
+     * Dispatches one logical ray-trace tick to the worker pool.
+     * <p>
+     * The method snapshots callables from the concurrent player map and waits for completion, which
+     * guarantees non-overlapping logical ticks.
+     */
     @Override
     public void run() {
         try {
+            if (!this.plugin.isRunning() || this.plugin.getExecutorService() == null) {
+                return;
+            }
+
             if (this.plugin.isTimingsEnabled()) {
                 this.watch.start();
             } else if (this.watch.isRunning()) {
@@ -33,8 +52,11 @@ public final class RayTraceTimerTask extends TimerTask {
                 this.lastNotify = Instant.MIN;
             }
 
-            this.plugin.getExecutorService()
-                    .invokeAll(this.plugin.getPlayerData().values().stream().map(PlayerData::getCallable).toList());
+            final List<Callable<Void>> tasks = this.plugin.getPlayerData().values().stream()
+                    .map(PlayerData::getCallable)
+                    .filter(Objects::nonNull)
+                    .toList();
+            this.plugin.getExecutorService().invokeAll(tasks);
 
             if (this.watch.isRunning()) {
                 this.watch.stop();
