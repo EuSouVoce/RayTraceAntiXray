@@ -8,6 +8,9 @@
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
 
+#vscode settings
+/.vscode
+
 # Java
 # Compiled class file
 *.class
