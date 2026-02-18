@@ -3,7 +3,12 @@
 
 > [!IMPORTANT]  
 > This is **EuSouVoce's fork** of [TauCu's fork](https://github.com/TauCu/RayTraceAntiXray), aimed at improving thread access, even when other plugins are also modifying packets.  
-> I'm modifying certain aspects of the plugin to improve stability for a heavily customized and specific fork of Paper. If you encounter bugs that only appear in this fork, please open an issue here. Otherwise, kindly report them to the current maintainer of the plugin (@TauCu).  
+> I'm modifying certain aspects of the plugin to improve stability for a heavily customized and specific fork of Paper. If you encounter bugs that only appear in this fork, please open an issue here. Otherwise, kindly report them to the current maintainer of the plugin (@TauCu).
+
+> [!TIP]
+> Unlike the @Taucu version, this one requires minimal configuration in the Paper AntiXray settings. Simply set the engine mode to 1, drag and drop it into the plugins folder, and all ores will be tracked regardless of Y level — not only those below sea level (y=64).
+
+> I previously shared this suggestion in a pull request (https://github.com/TauCu/RayTraceAntiXray/pull/5), as I believe many server owners prefer solutions that work with little to no additional configuration.
 
 ---
 Paper plugin for server-side async multithreaded ray tracing to hide ores that are exposed to air using Paper Anti-Xray engine-mode 1.
